@@ -53,14 +53,14 @@ export const CameraView: React.FC<Props> = ({
           />
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center text-gray-400">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-800/80">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-12 h-12 mb-2 opacity-60"
+            className="w-16 h-16 mb-3 opacity-70"
           >
             <path
               strokeLinecap="round"
