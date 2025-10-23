@@ -14,12 +14,12 @@ interface Props {
 }
 
 const labelColors: Record<string, string> = {
-  "avian Influenza": "#00FF00",
+  "avian Influenza": "#ff9341ff",
   "newcastle Disease": "#FF0000",
   "fowl Pox": "#FFA500",
   "infectious Bronchitis": "#00FFFF",
   // fallback color for labels not listed here
-  default: "#FFFFFF",
+  default: "#00FF00",
 };
 
 const DetectionOverlay: React.FC<Props> = ({ videoRef, detections }) => {

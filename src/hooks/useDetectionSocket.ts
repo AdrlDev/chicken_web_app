@@ -57,6 +57,7 @@ export const useDetectionSocket = (videoRef: React.RefObject<HTMLVideoElement | 
     };
 
     const interval = setInterval(sendFrame, 300);
+
     return () => clearInterval(interval);
   }, [connected, videoRef]);
 
