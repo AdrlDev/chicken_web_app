@@ -14,7 +14,7 @@ export function useImageDetectionSocket() {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://aedev.cloud/ws/detect"; // update if needed
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "wss://aedev.cloud/ws/detect"; // update if needed
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;
 

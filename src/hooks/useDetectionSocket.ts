@@ -11,7 +11,7 @@ export const useDetectionSocket = (videoRef: React.RefObject<HTMLVideoElement | 
 
   // Connect once
   useEffect(() => {
-    const ws = new WebSocket("ws://aedev.cloud/ws/detect");
+    const ws = new WebSocket("wss://aedev.cloud/ws/detect");
     socketRef.current = ws;
 
     ws.onopen = () => {
