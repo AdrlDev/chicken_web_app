@@ -15,7 +15,7 @@ const labelColors: Record<string, string> = {
   "coccidiosis poops": "#cc0909ff",
   "fowl cholera": "#f188f3ff",
   "fowl-pox": "#ff00bfff",
-  "Mycotic Infections": "#ffdc5eff",
+  "mycotic infections": "#ffdc5eff",
   // fallback color for labels not listed here
   default: "#00FF00",
 };

@@ -20,7 +20,7 @@ const labelColors: Record<string, string> = {
   "coccidiosis poops": "#cc0909ff",
   "fowl cholera": "#f188f3ff",
   "fowl-pox": "#ff00bfff",
-  "Mycotic Infections": "#ffdc5eff",
+  "mycotic infections": "#ffdc5eff",
   default: "#00FF00",
 };
 
@@ -71,7 +71,7 @@ const DetectionOverlay: React.FC<Props> = ({ videoRef, detections }) => {
         const textWidth = ctx.measureText(label).width + 8;
         const textHeight = 18;
 
-        ctx.fillStyle = color + "AA"; // semi-transparent
+        ctx.fillStyle = color; // semi-transparent
         ctx.fillRect(sx1, sy1 - textHeight, textWidth, textHeight);
 
         // Label text
