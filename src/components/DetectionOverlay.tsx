@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 
 interface DetectionBox {
-  bbox: number[]; // allow dynamic length
+  bbox: number[];
   label: string;
   confidence?: number;
 }
@@ -15,10 +15,12 @@ interface Props {
 
 const labelColors: Record<string, string> = {
   "avian Influenza": "#ff9341ff",
-  "newcastle Disease": "#FF0000",
-  "fowl Pox": "#FFA500",
-  "infectious Bronchitis": "#00FFFF",
-  // fallback color for labels not listed here
+  "blue comb": "#00fffbff",
+  "coccidiosis": "#da4e4eff",
+  "coccidiosis poops": "#cc0909ff",
+  "fowl cholera": "#f188f3ff",
+  "fowl-pox": "#ff00bfff",
+  "Mycotic Infections": "#ffdc5eff",
   default: "#00FF00",
 };
 
@@ -33,36 +35,57 @@ const DetectionOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Match canvas size to video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const draw = () => {
+      if (!video || !ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Always match canvas to current video size
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-    detections.forEach((det) => {
-      if (det.bbox.length < 4) return; // skip invalid
-      const [x1, y1, x2, y2] = det.bbox;
-      const color = labelColors[det.label] || labelColors.default;
-      const label = `${det.label} ${((det.confidence ?? 0) * 100).toFixed(1)}%`;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Bounding box
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      const scaleX = video.clientWidth / video.videoWidth;
+      const scaleY = video.clientHeight / video.videoHeight;
 
-      // Label background
-      ctx.font = "14px Arial";
-      const textWidth = ctx.measureText(label).width;
-      const textHeight = 18;
-      ctx.fillStyle = color + "80";
-      ctx.fillRect(x1, y1 - textHeight, textWidth + 6, textHeight);
+      detections.forEach((det) => {
+        if (det.bbox.length < 4) return;
+        const [x1, y1, x2, y2] = det.bbox;
 
-      // Label text
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillText(label, x1 + 3, y1 - 4);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detections]);
+        // Scale bbox coordinates
+        const sx1 = x1 * scaleX;
+        const sy1 = y1 * scaleY;
+        const sx2 = x2 * scaleX;
+        const sy2 = y2 * scaleY;
+
+        const color = labelColors[det.label] || labelColors.default;
+        const confidence = ((det.confidence ?? 0) * 100).toFixed(1) + "%";
+        const label = `${det.label} (${confidence})`;
+
+        // Bounding box
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
+
+        // Label background
+        ctx.font = "bold 14px Arial";
+        const textWidth = ctx.measureText(label).width + 8;
+        const textHeight = 18;
+
+        ctx.fillStyle = color + "AA"; // semi-transparent
+        ctx.fillRect(sx1, sy1 - textHeight, textWidth, textHeight);
+
+        // Label text
+        ctx.fillStyle = "#000";
+        ctx.fillText(label, sx1 + 4, sy1 - 4);
+      });
+
+      requestAnimationFrame(draw);
+    };
+
+    draw(); // start animation loop
+
+    return () => cancelAnimationFrame(draw as unknown as number);
+  }, [detections, videoRef]);
 
   return (
     <canvas
