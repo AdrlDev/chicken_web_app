@@ -16,7 +16,7 @@ export default function Dropdown({
 }: DropdownProps) {
   return (
     <Menu as="div" className="relative inline-block w-full text-left">
-      <MenuButton className="inline-flex w-full justify-between items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-white/20">
+      <MenuButton className="inline-flex w-full justify-between items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-gray-800 inset-ring-1 inset-ring-gray/5 hover:bg-white/20">
         {value || placeholder}
         <ChevronDownIcon
           aria-hidden="true"
