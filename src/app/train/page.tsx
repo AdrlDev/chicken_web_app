@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import Image from "next/image";
 import TrainLayout from "@/components/TrainLayout";
 import { useTrainUploader } from "@/hooks/useTrainUploader";
+import Dropdown from "@/components/Dropdown"; // Import the new Dropdown
 
 const labels = [
   "Healthy",
@@ -46,18 +47,12 @@ export default function UploadPage() {
         <label className="block text-sm font-medium mb-1 text-gray-700">
           Select Label:
         </label>
-        <select
+        <Dropdown
+          options={labels}
           value={selectedLabel}
-          onChange={(e) => setSelectedLabel(e.target.value)}
-          className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-400"
-        >
-          <option value="">-- Choose a Label --</option>
-          {labels.map((lbl) => (
-            <option key={lbl} value={lbl}>
-              {lbl}
-            </option>
-          ))}
-        </select>
+          onChange={setSelectedLabel}
+          placeholder="-- Choose a Label --"
+        />
       </div>
 
       {/* Drag and Drop Upload */}
