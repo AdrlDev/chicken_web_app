@@ -92,6 +92,12 @@ export const CameraView: React.FC<Props> = ({
         >
           Upload Image
         </button>
+        <button
+          onClick={() => router.push("/video")}
+          className="px-6 py-3 rounded-lg font-semibold bg-blue-500 hover:bg-blue-600 transition"
+        >
+          Upload Video
+        </button>
       </div>
     </div>
   );
