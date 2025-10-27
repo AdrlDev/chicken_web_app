@@ -59,6 +59,7 @@ export const useVideoDetectionSocket = (
             label: data.labels?.[i] ?? "unknown",
             confidence: data.confidences?.[i] ?? 0,
           }));
+          console.log(detections);
           setResult(detections);
         } else {
           setResult([]);
