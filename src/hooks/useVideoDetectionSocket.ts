@@ -18,7 +18,7 @@ export const useVideoDetectionSocket = (
   const startDetection = () => {
     if (!videoRef.current) return;
 
-    const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL}/ws/video-detect`;
+    const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL}/video-detect`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
