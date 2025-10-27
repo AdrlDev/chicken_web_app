@@ -13,6 +13,8 @@ export const VideoUpload: React.FC = () => {
   const { isDetecting, result, startDetection, stopDetection } =
     useVideoDetectionSocket(videoRef);
 
+  console.log(result)
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
