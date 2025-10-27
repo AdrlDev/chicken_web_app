@@ -14,13 +14,13 @@ interface Props {
 }
 
 const labelColors: Record<string, string> = {
-  "avian Influenza": "#ff9341ff",
-  "blue comb": "#00fffbff",
-  "coccidiosis": "#da4e4eff",
-  "coccidiosis poops": "#cc0909ff",
-  "fowl cholera": "#f188f3ff",
-  "fowl-pox": "#ff00bfff",
-  "mycotic infections": "#ffdc5eff",
+  "avian Influenza": "#ff9341",
+  "blue comb": "#00fffb",
+  "coccidiosis": "#da4e4e",
+  "coccidiosis poops": "#cc0909",
+  "fowl cholera": "#f188f3",
+  "fowl-pox": "#ff00bf",
+  "mycotic infections": "#ffdc5e",
   default: "#00FF00",
 };
 
@@ -40,13 +40,17 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     const draw = () => {
       if (!video || !ctx) return;
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // 🧠 Match canvas size to the rendered video size
+      const width = video.clientWidth;
+      const height = video.clientHeight;
+      canvas.width = width;
+      canvas.height = height;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, width, height);
 
-      const scaleX = video.clientWidth / video.videoWidth;
-      const scaleY = video.clientHeight / video.videoHeight;
+      // ✅ Scale detections to match current display size
+      const scaleX = width / video.videoWidth;
+      const scaleY = height / video.videoHeight;
 
       detections?.forEach((det) => {
         if (!det.bbox || det.bbox.length < 4) return;
@@ -66,7 +70,7 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
         ctx.lineWidth = 2;
         ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
 
-        // Label background
+        // Label
         ctx.font = "bold 14px Arial";
         const textWidth = ctx.measureText(label).width + 8;
         const textHeight = 18;
@@ -74,7 +78,6 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
         ctx.fillStyle = color;
         ctx.fillRect(sx1, sy1 - textHeight, textWidth, textHeight);
 
-        // Label text
         ctx.fillStyle = "#000";
         ctx.fillText(label, sx1 + 4, sy1 - 4);
       });
@@ -83,14 +86,13 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     };
 
     draw();
-
     return () => cancelAnimationFrame(animationId);
   }, [detections, videoRef]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full pointer-events-none"
+      className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"
     />
   );
 };
