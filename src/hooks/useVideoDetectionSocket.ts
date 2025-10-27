@@ -14,8 +14,22 @@ export const useVideoDetectionSocket = (
   const wsRef = useRef<WebSocket | null>(null);
   const animationRef = useRef<number | null>(null);
 
+  const stopDetection = () => {
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.close(1000, "Manual stop");
+    }
+    wsRef.current = null;
+    setIsDetecting(false);
+  };
+
   const startDetection = () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current) {
+      console.warn("🎥 No video element found");
+      return;
+    }
+
+    stopDetection(); // Ensure any old connections are closed
 
     const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL}/video-detect`;
     const ws = new WebSocket(wsUrl);
@@ -28,17 +42,30 @@ export const useVideoDetectionSocket = (
     ws.onopen = () => {
       console.log("🟢 Connected to video detection WebSocket");
       setIsDetecting(true);
-      video.play();
+      video.play().catch(() => {});
 
       const sendFrame = () => {
         if (!video || ws.readyState !== WebSocket.OPEN) return;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        canvas.toBlob((blob) => {
-          if (blob) blob.arrayBuffer().then((buffer) => ws.send(buffer));
-        }, "image/jpeg", 0.5);
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob && ws.readyState === WebSocket.OPEN) {
+                blob.arrayBuffer().then((buffer) => {
+                  ws.send(buffer);
+                });
+              }
+            },
+            "image/jpeg",
+            0.6 // Slightly higher quality
+          );
+        } catch (err) {
+          console.error("❌ Frame send error", err);
+        }
 
         animationRef.current = requestAnimationFrame(sendFrame);
       };
@@ -49,8 +76,6 @@ export const useVideoDetectionSocket = (
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        // Some YOLO servers send an object {boxes: [], labels: []}
-        // Normalize both formats:
         if (Array.isArray(data)) {
           setResult(data);
         } else if (Array.isArray(data.boxes)) {
@@ -59,9 +84,9 @@ export const useVideoDetectionSocket = (
             label: data.labels?.[i] ?? "unknown",
             confidence: data.confidences?.[i] ?? 0,
           }));
-          console.log(detections);
           setResult(detections);
         } else {
+          console.warn("⚠️ Unexpected data format", data);
           setResult([]);
         }
       } catch (err) {
@@ -69,22 +94,22 @@ export const useVideoDetectionSocket = (
       }
     };
 
-    ws.onclose = () => {
-      console.log("🔴 WebSocket closed");
+    ws.onerror = (err) => {
+      console.error("⚠️ WebSocket error:", err);
+    };
+
+    ws.onclose = (e) => {
+      console.log(`🔴 WebSocket closed (code ${e.code}):`, e.reason);
       setIsDetecting(false);
+      wsRef.current = null;
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   };
 
-  const stopDetection = () => {
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    setIsDetecting(false);
-  };
-
-  useEffect(() => stopDetection, []); // cleanup on unmount
+  // Cleanup only when component unmounts
+  useEffect(() => {
+    return () => stopDetection();
+  }, []);
 
   return { isDetecting, result, startDetection, stopDetection };
 };
