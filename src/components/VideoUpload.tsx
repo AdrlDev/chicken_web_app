@@ -16,13 +16,28 @@ export const VideoUpload: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
     }
   };
 
   const handleRemove = () => {
     setPreviewUrl(null);
     stopDetection();
+  };
+
+  const handlePlay = () => {
+    // Start detection automatically when the video plays
+    if (!isDetecting) {
+      startDetection();
+    }
+  };
+
+  const handlePause = () => {
+    // Stop detection when paused
+    if (isDetecting) {
+      stopDetection();
+    }
   };
 
   return (
@@ -51,11 +66,9 @@ export const VideoUpload: React.FC = () => {
               src={previewUrl}
               controls
               className="w-full rounded-lg"
-              onLoadedMetadata={() => {
-                if (videoRef.current) {
-                  videoRef.current.play();
-                }
-              }}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onEnded={stopDetection}
             />
             <VideoOverlay videoRef={videoRef} detections={result} />
             <button
@@ -68,26 +81,8 @@ export const VideoUpload: React.FC = () => {
         )}
       </div>
 
-      {previewUrl && !isDetecting && (
-        <button
-          onClick={startDetection}
-          className="mt-6 px-6 py-3 rounded-lg font-semibold bg-blue-500 hover:bg-blue-600 transition"
-        >
-          Start Live Detection
-        </button>
-      )}
-
-      {isDetecting && (
-        <button
-          onClick={stopDetection}
-          className="mt-6 px-6 py-3 rounded-lg font-semibold bg-red-500 hover:bg-red-600 transition"
-        >
-          Stop Detection
-        </button>
-      )}
-
       <button
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/camera")}
         className="mt-8 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition"
       >
         Back to Camera
