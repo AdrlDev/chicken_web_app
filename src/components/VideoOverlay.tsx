@@ -14,13 +14,13 @@ interface Props {
 }
 
 const labelColors: Record<string, string> = {
-  "avian Influenza": "#ff9341",
-  "blue comb": "#00fffb",
-  "coccidiosis": "#da4e4e",
-  "coccidiosis poops": "#cc0909",
-  "fowl cholera": "#f188f3",
-  "fowl-pox": "#ff00bf",
-  "mycotic infections": "#ffdc5e",
+  "avian Influenza": "#ff9341ff",
+  "blue comb": "#00fffbff",
+  "coccidiosis": "#da4e4eff",
+  "coccidiosis poops": "#cc0909ff",
+  "fowl cholera": "#f188f3ff",
+  "fowl-pox": "#ff00bfff",
+  "mycotic infections": "#ffdc5eff",
   default: "#00FF00",
 };
 
@@ -37,20 +37,25 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
 
     let animationId: number;
 
+    // 🟢 Resize canvas to match video size
+    const resizeCanvas = () => {
+      if (!canvas || !video) return;
+      const rect = video.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+    };
+
     const draw = () => {
       if (!video || !ctx) return;
+      resizeCanvas();
 
-      // 🧠 Match canvas size to the rendered video size
-      const width = video.clientWidth;
-      const height = video.clientHeight;
-      canvas.width = width;
-      canvas.height = height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.clearRect(0, 0, width, height);
-
-      // ✅ Scale detections to match current display size
-      const scaleX = width / video.videoWidth;
-      const scaleY = height / video.videoHeight;
+      const rect = video.getBoundingClientRect();
+      const scaleX = rect.width / video.videoWidth;
+      const scaleY = rect.height / video.videoHeight;
 
       detections?.forEach((det) => {
         if (!det.bbox || det.bbox.length < 4) return;
@@ -65,12 +70,10 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
         const confidence = ((det.confidence ?? 0) * 100).toFixed(1) + "%";
         const label = `${det.label} (${confidence})`;
 
-        // Box
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
 
-        // Label
         ctx.font = "bold 14px Arial";
         const textWidth = ctx.measureText(label).width + 8;
         const textHeight = 18;
@@ -85,8 +88,21 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
       animationId = requestAnimationFrame(draw);
     };
 
+    // 🔄 Handle fullscreen change
+    const handleFullscreenChange = () => {
+      setTimeout(() => resizeCanvas(), 200);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener("resize", resizeCanvas);
+
     draw();
-    return () => cancelAnimationFrame(animationId);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      window.removeEventListener("resize", resizeCanvas);
+    };
   }, [detections, videoRef]);
 
   return (
