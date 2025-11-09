@@ -56,6 +56,7 @@ export function useTrainUploader() {
       if (response.data.status === "processing") {
         setTimeout(() => checkStatus(fileName, taskId), 2000);
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err: any) {
       setUploadStatuses(prev => prev.map(status => {
         if (status.taskId === taskId) {

@@ -7,7 +7,7 @@ import { useTrainUploader } from "@/hooks/useTrainUploader";
 import Dropdown from "@/components/Dropdown";
 
 const labels = [
-  "Healthy",
+  "healthy",
   "avian Influenza",
   "blue comb",
   "coccidiosis",
