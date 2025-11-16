@@ -155,27 +155,34 @@ export function useTrainUploader() {
   // ------------------------
   const trainModel = async () => {
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`);
-      
-      // Open WebSocket for live logs
+    // DO NOT BLOCK UI — fire and forget
+    axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`)
+        .catch(() => {
+          console.warn("Training API returned error, but training may still be running.");
+        });
+
+      // Open WebSocket immediately
       const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("✅ Connected to YOLO WebSocket");
+        setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
       };
 
       ws.onmessage = (event) => {
         setTrainLogs(prev => [...prev, event.data]);
       };
+
       ws.onclose = () => {
         setTrainLogs(prev => [...prev, "⚠️ Training WebSocket closed"]);
       };
+
       ws.onerror = () => {
         setTrainLogs(prev => [...prev, "❌ Training WebSocket error"]);
       };
 
-      return res.data;
+      return { message: "Training started" };
+
     } catch (err) {
       throw new Error("Failed to start training");
     }
