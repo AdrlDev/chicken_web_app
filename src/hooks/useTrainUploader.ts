@@ -158,7 +158,7 @@ export function useTrainUploader() {
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`);
       
       // Open WebSocket for live logs
-      wsRef.current = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL_WS}/ws/train`);
+      wsRef.current = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/ws/train`);
       wsRef.current.onmessage = (event) => {
         setTrainLogs(prev => [...prev, event.data]);
       };
