@@ -82,14 +82,16 @@ export default function UploadPage() {
       : 0;
 
   // Determine what to show
-  const showUploadUI = !trainingStarted && (uploading || uploadStatuses.length === 0 || uploadStatuses.some(s => s.status !== "completed"));
+  const hasPendingUploads = uploadStatuses.some(
+    (s) => s.status === "uploading" || s.status === "processing" || s.status === "error"
+  );
   const showTrainButton = !trainingStarted && uploadStatuses.length > 0 && uploadStatuses.every(s => s.status === "completed");
   const showNewUploadButton = trainingStarted && trainProgress >= 100; // You can adjust logic if needed
 
   return (
     <TrainLayout title="🐔 Dataset Uploader (ChickenAI)">
       {/* Upload UI */}
-      {showUploadUI && (
+      {hasPendingUploads && (
         <>
           {/* Label Dropdown */}
           <div className="mb-4">
