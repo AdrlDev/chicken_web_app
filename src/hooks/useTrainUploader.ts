@@ -167,15 +167,12 @@ export function useTrainUploader() {
 
         ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
         ws.onmessage = (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            if (data.progress !== undefined) {
-              animateProgress(data.progress); // smooth transition
-              setTrainLogs(prev => [...prev, data.log]);
-            } else {
-              setTrainLogs(prev => [...prev, e.data]);
-            }
-          } catch {
+          const data = JSON.parse(e.data);
+          if (data.event === "epoch_end" && data.epoch !== undefined && data.total_epochs !== undefined) {
+            const progress = Math.round((data.epoch / data.total_epochs) * 100);
+            animateProgress(progress);
+            setTrainLogs(prev => [...prev, `Epoch ${data.epoch}/${data.total_epochs}`]);
+          } else {
             setTrainLogs(prev => [...prev, e.data]);
           }
       };
