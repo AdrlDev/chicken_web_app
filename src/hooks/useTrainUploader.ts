@@ -167,17 +167,27 @@ export function useTrainUploader() {
 
         ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
         ws.onmessage = (e) => {
-          const data = JSON.parse(e.data);
-          if (data.event === "epoch_end" && data.epoch !== undefined && data.total_epochs !== undefined) {
-            const progress = Math.round((data.epoch / data.total_epochs) * 100);
-            animateProgress(progress);
-            setTrainLogs(prev => [...prev, `Epoch ${data.epoch}/${data.total_epochs}`]);
-          } else {
+          let data;
+          try {
+            data = JSON.parse(e.data);
+          } catch {
+            // Non-JSON message, treat as log
             setTrainLogs(prev => [...prev, e.data]);
+            return;
+          }
+
+          if (data.event === "batch_end" && data.progress !== undefined) {
+            animateProgress(data.progress);
+            setTrainLogs(prev => [...prev, `Epoch ${data.epoch}, Batch ${data.batch}/${data.total_batches}, Loss: ${data.loss}`]);
+          } else if (data.event === "epoch_end") {
+            animateProgress(Math.round((data.epoch / data.total_epochs) * 100));
+            setTrainLogs(prev => [...prev, `Epoch ${data.epoch}/${data.total_epochs}`]);
+          } else if (data.event === "model_saved") {
+            setTrainLogs(prev => [...prev, "💾 Model saved"]);
           }
       };
         ws.onclose = (e) => setTrainLogs(prev => [...prev, `🛑 WS closed (${e.code})`]);
-        ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error`]);
+        ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error (${err})`]);
       }
 
       return { message: "Training started" };
