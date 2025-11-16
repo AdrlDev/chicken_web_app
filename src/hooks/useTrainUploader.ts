@@ -158,14 +158,20 @@ export function useTrainUploader() {
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`);
       
       // Open WebSocket for live logs
-      wsRef.current = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
-      wsRef.current.onmessage = (event) => {
+      const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("✅ Connected to YOLO WebSocket");
+      };
+
+      ws.onmessage = (event) => {
         setTrainLogs(prev => [...prev, event.data]);
       };
-      wsRef.current.onclose = () => {
+      ws.onclose = () => {
         setTrainLogs(prev => [...prev, "⚠️ Training WebSocket closed"]);
       };
-      wsRef.current.onerror = () => {
+      ws.onerror = () => {
         setTrainLogs(prev => [...prev, "❌ Training WebSocket error"]);
       };
 
