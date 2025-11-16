@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import axios from "axios";
 
 export interface UploadStatus {
@@ -33,8 +34,12 @@ interface ProcessingStatusResponse {
 export function useTrainUploader() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
+  const [trainLogs, setTrainLogs] = useState<string[]>([]);
+  const wsRef = useRef<WebSocket | null>(null);
 
-  // Poll for status of a specific upload
+  // ------------------------
+  // Status Polling
+  // ------------------------
   const checkStatus = useCallback(async (fileName: string, taskId: string) => {
     try {
       const response = await axios.get<ProcessingStatusResponse>(
@@ -52,11 +57,9 @@ export function useTrainUploader() {
         return status;
       }));
 
-      // Continue polling if still processing
       if (response.data.status === "processing") {
         setTimeout(() => checkStatus(fileName, taskId), 2000);
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err: any) {
       setUploadStatuses(prev => prev.map(status => {
         if (status.taskId === taskId) {
@@ -71,7 +74,9 @@ export function useTrainUploader() {
     }
   }, []);
 
+  // ------------------------
   // Upload images
+  // ------------------------
   const uploadImages = async (files: File[], label: string) => {
     if (!files.length) return alert("Please select at least one image.");
     if (!label) return alert("Please select a label.");
@@ -128,7 +133,9 @@ export function useTrainUploader() {
     setUploading(false);
   };
 
-  // Reupload a single file
+  // ------------------------
+  // Reupload single file
+  // ------------------------
   const reuploadFile = async (fileName: string, label: string) => {
     const file = uploadStatuses.find(s => s.fileName === fileName);
     if (!file) return alert("File not found for reupload");
@@ -143,14 +150,28 @@ export function useTrainUploader() {
     await uploadImages([fileObj], label);
   };
 
+  // ------------------------
   // Trigger model training
+  // ------------------------
   const trainModel = async () => {
     try {
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`);
+      
+      // Open WebSocket for live logs
+      wsRef.current = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL_WS}/ws/train`);
+      wsRef.current.onmessage = (event) => {
+        setTrainLogs(prev => [...prev, event.data]);
+      };
+      wsRef.current.onclose = () => {
+        setTrainLogs(prev => [...prev, "⚠️ Training WebSocket closed"]);
+      };
+      wsRef.current.onerror = () => {
+        setTrainLogs(prev => [...prev, "❌ Training WebSocket error"]);
+      };
+
       return res.data;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      throw new Error("Failed to start training:");
+      throw new Error("Failed to start training");
     }
   };
 
@@ -159,6 +180,7 @@ export function useTrainUploader() {
     uploadStatuses,
     uploadImages,
     reuploadFile,
-    trainModel
+    trainModel,
+    trainLogs
   };
 }

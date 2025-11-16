@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import TrainLayout from "@/components/TrainLayout";
 import { useTrainUploader } from "@/hooks/useTrainUploader";
@@ -21,7 +21,15 @@ const labels = [
 export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
-  const { uploading, uploadStatuses, uploadImages, reuploadFile, trainModel } = useTrainUploader();
+  const { uploading, uploadStatuses, uploadImages, reuploadFile, trainModel, trainLogs } = useTrainUploader();
+  const logContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll logs
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [trainLogs]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -40,18 +48,15 @@ export default function UploadPage() {
     await uploadImages(selectedFiles, selectedLabel);
   };
 
-  // Trigger train when all images completed
   const handleTrainModel = async () => {
     try {
       const data = await trainModel();
       alert(data.message || "Training started!");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch {
       alert("Failed to start training");
     }
   };
 
-  // Overall progress
   const overallProgress = uploadStatuses.length > 0
     ? uploadStatuses.reduce((sum, status) => sum + status.progress, 0) / uploadStatuses.length
     : 0;
@@ -213,6 +218,27 @@ export default function UploadPage() {
           : "Images will be automatically labeled using AI detection"
         }
       </p>
+
+      {/* Training Logs */}
+      {trainLogs.length > 0 && (
+        <div
+          className="mt-6 border border-gray-300 rounded-lg p-4 bg-gray-50 h-64 overflow-y-auto font-mono text-xs text-gray-700"
+          ref={logContainerRef}
+        >
+          {trainLogs.map((log, idx) => {
+            let colorClass = "text-gray-700";
+
+            const logLower = log.toLowerCase();
+            if (logLower.includes("error") || logLower.includes("failed") || logLower.includes("exception")) {
+              colorClass = "text-red-600";
+            } else if (logLower.includes("warning") || log.includes("⚠️")) {
+              colorClass = "text-yellow-600";
+            }
+
+            return <p key={idx} className={colorClass}>{log}</p>;
+          })}
+        </div>
+      )}
     </TrainLayout>
   );
 }
