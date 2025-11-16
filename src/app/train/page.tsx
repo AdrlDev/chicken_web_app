@@ -38,7 +38,6 @@ export default function UploadPage() {
 
   const handleUpload = async () => {
     await uploadImages(selectedFiles, selectedLabel);
-    setSelectedFiles([]); // clear selected files after upload
   };
 
   // Trigger train when all images completed
@@ -103,7 +102,14 @@ export default function UploadPage() {
           {uploadStatuses.map((status, idx) => (
             <div key={idx} className="relative rounded-lg overflow-hidden shadow-md border border-gray-200">
               <Image
-                src={status.fileName.startsWith("http") ? status.fileName : URL.createObjectURL(selectedFiles.find(f => f.name === status.fileName)!) }
+                src={
+                  status.fileName.startsWith("http")
+                    ? status.fileName
+                    : (() => {
+                        const file = selectedFiles.find(f => f.name === status.fileName);
+                        return file ? URL.createObjectURL(file) : "";
+                      })()
+                }
                 alt={status.fileName}
                 width={300}
                 height={200}
