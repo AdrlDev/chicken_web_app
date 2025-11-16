@@ -162,7 +162,7 @@ export function useTrainUploader() {
 
       // Open WS if not already connected
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/ws/train`);
+        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
         wsRef.current = ws;
 
         ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
@@ -170,7 +170,7 @@ export function useTrainUploader() {
           try {
             const data = JSON.parse(e.data);
             if (data.progress !== undefined) {
-              setTrainingProgress(data.progress); // ✅ now a number
+              animateProgress(data.progress); // smooth transition
               setTrainLogs(prev => [...prev, data.log]);
             } else {
               setTrainLogs(prev => [...prev, e.data]);
@@ -199,6 +199,25 @@ export function useTrainUploader() {
       }
     };
   }, []);
+
+  const progressRef = useRef<number>(0);
+
+  const animateProgress = (target: number) => {
+  const step = () => {
+      const current = progressRef.current;
+      const diff = target - current;
+      if (Math.abs(diff) < 0.5) {
+        progressRef.current = target;
+        setTrainingProgress(target);
+        return;
+      }
+      const next = current + diff * 0.1; // smooth interpolation
+      progressRef.current = next;
+      setTrainingProgress(next);
+      requestAnimationFrame(step);
+    };
+    step();
+  };
 
   return {
     uploading,

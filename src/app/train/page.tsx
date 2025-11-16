@@ -245,11 +245,11 @@ export default function UploadPage() {
         <div className="mt-2">
           <div className="w-full bg-gray-200 h-2 rounded-full">
             <div
-              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${trainProgress}%` }}
+              className="bg-purple-500 h-2 rounded-full transition-all duration-100"
+              style={{ width: `${Math.round(trainProgress)}%` }}
             />
           </div>
-          <p className="text-sm text-gray-600 mt-1">Training Progress: {trainProgress}%</p>
+          <p className="text-sm text-gray-600 mt-1">Training Progress: {Math.round(trainProgress)}%</p>
         </div>
       )}
     </TrainLayout>
