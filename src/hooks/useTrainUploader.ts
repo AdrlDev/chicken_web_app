@@ -35,6 +35,7 @@ export function useTrainUploader() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
   const [trainLogs, setTrainLogs] = useState<string[]>([]);
+  const [trainProgress, setTrainingProgress] = useState<number>(0);
   const wsRef = useRef<WebSocket | null>(null);
 
   // ------------------------
@@ -165,7 +166,19 @@ export function useTrainUploader() {
         wsRef.current = ws;
 
         ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
-        ws.onmessage = (e) => setTrainLogs(prev => [...prev, e.data]);
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.progress !== undefined) {
+              setTrainingProgress(data.progress); // ✅ now a number
+              setTrainLogs(prev => [...prev, data.log]);
+            } else {
+              setTrainLogs(prev => [...prev, e.data]);
+            }
+          } catch {
+            setTrainLogs(prev => [...prev, e.data]);
+          }
+      };
         ws.onclose = (e) => setTrainLogs(prev => [...prev, `🛑 WS closed (${e.code})`]);
         ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error`]);
       }
@@ -193,6 +206,7 @@ export function useTrainUploader() {
     uploadImages,
     reuploadFile,
     trainModel,
-    trainLogs
+    trainLogs,
+    trainProgress
   };
 }

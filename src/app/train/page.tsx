@@ -21,7 +21,7 @@ const labels = [
 export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
-  const { uploading, uploadStatuses, uploadImages, reuploadFile, trainModel, trainLogs } = useTrainUploader();
+  const { uploading, uploadStatuses, uploadImages, reuploadFile, trainModel, trainLogs, trainProgress } = useTrainUploader();
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll logs
@@ -237,6 +237,19 @@ export default function UploadPage() {
 
             return <p key={idx} className={colorClass}>{log}</p>;
           })}
+        </div>
+      )}
+
+      {/* Training Progress */}
+      {trainProgress > 0 && (
+        <div className="mt-2">
+          <div className="w-full bg-gray-200 h-2 rounded-full">
+            <div
+              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${trainProgress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600 mt-1">Training Progress: {trainProgress}%</p>
         </div>
       )}
     </TrainLayout>
