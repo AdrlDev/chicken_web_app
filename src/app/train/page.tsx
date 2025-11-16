@@ -5,6 +5,7 @@ import Image from "next/image";
 import TrainLayout from "@/components/TrainLayout";
 import { useTrainUploader } from "@/hooks/useTrainUploader";
 import Dropdown from "@/components/Dropdown";
+import { CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
 
 const labels = [
   "healthy",
@@ -20,7 +21,7 @@ const labels = [
 export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
-  const { uploading, uploadStatuses, uploadImages } = useTrainUploader();
+  const { uploading, uploadStatuses, uploadImages, reuploadFile, trainModel } = useTrainUploader();
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -37,10 +38,21 @@ export default function UploadPage() {
 
   const handleUpload = async () => {
     await uploadImages(selectedFiles, selectedLabel);
-    setSelectedFiles([]); // Clear selected files after upload starts
+    setSelectedFiles([]); // clear selected files after upload
   };
 
-  // Calculate overall progress
+  // Trigger train when all images completed
+  const handleTrainModel = async () => {
+    try {
+      const data = await trainModel();
+      alert(data.message || "Training started!");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      alert("Failed to start training");
+    }
+  };
+
+  // Overall progress
   const overallProgress = uploadStatuses.length > 0
     ? uploadStatuses.reduce((sum, status) => sum + status.progress, 0) / uploadStatuses.length
     : 0;
@@ -63,7 +75,7 @@ export default function UploadPage() {
         </p>
       </div>
 
-      {/* Drag and Drop Upload */}
+      {/* Drag & Drop Upload */}
       <div
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
@@ -85,67 +97,59 @@ export default function UploadPage() {
         </p>
       </div>
 
-      {/* Image Preview */}
-      {selectedFiles.length > 0 && (
+      {/* Image Preview Grid */}
+      {uploadStatuses.length > 0 && (
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-          {selectedFiles.map((file, idx) => (
-            <div key={idx} className="relative">
+          {uploadStatuses.map((status, idx) => (
+            <div key={idx} className="relative rounded-lg overflow-hidden shadow-md border border-gray-200">
               <Image
-                src={URL.createObjectURL(file)}
-                alt={file.name}
+                src={status.fileName.startsWith("http") ? status.fileName : URL.createObjectURL(selectedFiles.find(f => f.name === status.fileName)!) }
+                alt={status.fileName}
                 width={300}
                 height={200}
-                className="rounded-lg shadow-md h-32 w-full object-cover"
+                className="h-32 w-full object-cover"
                 unoptimized
               />
-              <p className="text-xs mt-1 text-center text-gray-500 truncate">
-                {file.name}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* Upload Status List */}
-      {uploadStatuses.length > 0 && (
-        <div className="mt-4 space-y-3">
-          {uploadStatuses.map((status, idx) => (
-            <div key={idx} className="bg-gray-50 rounded-lg p-3">
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-medium text-gray-700 truncate">
-                  {status.fileName}
-                </p>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  status.status === 'completed' ? 'bg-green-100 text-green-800' :
-                  status.status === 'error' ? 'bg-red-100 text-red-800' :
-                  status.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}>
-                  {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
-                </span>
+              {/* Status Overlay */}
+              <div className="absolute top-1 right-1 flex items-center space-x-1">
+                {status.status === "completed" && <CheckCircleIcon className="h-5 w-5 text-green-500" />}
+                {status.status === "error" && <XCircleIcon className="h-5 w-5 text-red-500" />}
+                {status.status === "processing" && <ClockIcon className="h-5 w-5 text-yellow-500 animate-spin" />}
               </div>
-              
-              {/* Progress bar */}
-              {(status.status === 'uploading' || status.status === 'processing') && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
+
+              {/* File Name */}
+              <p className="text-xs mt-1 text-center text-gray-500 truncate">{status.fileName}</p>
+
+              {/* Progress Bar */}
+              {(status.status === "uploading" || status.status === "processing") && (
+                <div className="w-full bg-gray-200 h-2 mt-1">
                   <div
                     className={`h-2 rounded-full transition-all duration-300 ${
-                      status.status === 'processing' ? 'bg-yellow-500' : 'bg-blue-500'
+                      status.status === "processing" ? "bg-yellow-500" : "bg-blue-500"
                     }`}
                     style={{ width: `${status.progress}%` }}
                   />
                 </div>
               )}
-              
-              {/* Status message */}
+
+              {/* Status Message */}
               {status.message && (
-                <p className={`text-xs mt-1 ${
-                  status.status === 'error' ? 'text-red-600' :
-                  status.status === 'completed' ? 'text-green-600' :
-                  'text-gray-500'
-                }`}>
-                  {status.message}
-                </p>
+                <p className={`text-xs mt-1 text-center ${
+                  status.status === "error" ? "text-red-600" :
+                  status.status === "completed" ? "text-green-600" :
+                  "text-gray-500"
+                }`}>{status.message}</p>
+              )}
+
+              {/* Reupload Button */}
+              {status.status === "error" && (
+                <button
+                  className="mt-2 w-full py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                  onClick={() => reuploadFile(status.fileName, selectedLabel)}
+                >
+                  Reupload
+                </button>
               )}
             </div>
           ))}
@@ -167,27 +171,38 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Submit Button */}
-      <button
-        disabled={uploading || selectedFiles.length === 0}
-        onClick={handleUpload}
-        className={`mt-6 w-full py-3 rounded-lg font-semibold text-white transition ${
-          uploading || selectedFiles.length === 0
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-green-600 hover:bg-green-700"
-        }`}
-      >
-        {uploading 
-          ? "Processing..." 
-          : selectedFiles.length === 0 
-            ? "Select Files to Upload"
-            : `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`
-        }
-      </button>
+      {/* Upload / Train Buttons */}
+      <div className="mt-6 space-y-3">
+        <button
+          disabled={uploading || selectedFiles.length === 0}
+          onClick={handleUpload}
+          className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+            uploading || selectedFiles.length === 0
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
+        >
+          {uploading
+            ? "Processing..."
+            : selectedFiles.length === 0
+              ? "Select Files to Upload"
+              : `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? "s" : ""}`
+          }
+        </button>
+
+        {uploadStatuses.length > 0 && uploadStatuses.every(s => s.status === "completed") && (
+          <button
+            className="w-full py-3 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700"
+            onClick={handleTrainModel}
+          >
+            Train Model
+          </button>
+        )}
+      </div>
 
       {/* Help Text */}
       <p className="mt-4 text-center text-sm text-gray-500">
-        {selectedLabel 
+        {selectedLabel
           ? `Images will be labeled as "${selectedLabel}"`
           : "Images will be automatically labeled using AI detection"
         }

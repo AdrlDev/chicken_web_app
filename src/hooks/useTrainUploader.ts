@@ -4,6 +4,14 @@
 import { useState, useCallback } from "react";
 import axios from "axios";
 
+export interface UploadStatus {
+  fileName: string;
+  taskId: string;
+  status: "uploading" | "processing" | "completed" | "error";
+  progress: number;
+  message?: string;
+}
+
 interface UploadResponse {
   message: string;
   image_id: string;
@@ -20,14 +28,6 @@ interface ProcessingStatusResponse {
     classes: string[];
   };
   error?: string;
-}
-
-interface UploadStatus {
-  fileName: string;
-  taskId: string;
-  status: "uploading" | "processing" | "completed" | "error";
-  progress: number;
-  message?: string;
 }
 
 export function useTrainUploader() {
@@ -71,18 +71,12 @@ export function useTrainUploader() {
     }
   }, []);
 
+  // Upload images
   const uploadImages = async (files: File[], label: string) => {
-    if (!files.length) {
-      alert("Please select at least one image.");
-      return;
-    }
-    if (!label) {
-      alert("Please select a label.");
-      return;
-    }
+    if (!files.length) return alert("Please select at least one image.");
+    if (!label) return alert("Please select a label.");
 
     setUploading(true);
-    // Initialize status for all files
     setUploadStatuses(files.map(file => ({
       fileName: file.name,
       taskId: "",
@@ -97,47 +91,36 @@ export function useTrainUploader() {
       formData.append("label_name", label);
 
       try {
-        // Update progress for current file
         const updateProgress = (progress: number) => {
-          setUploadStatuses(prev => prev.map((status, idx) => 
+          setUploadStatuses(prev => prev.map((status, idx) =>
             idx === i ? { ...status, progress } : status
           ));
         };
 
-        // Upload the file
         const response = await axios.post<UploadResponse>(
           `${process.env.NEXT_PUBLIC_API_URL}/auto-label-train`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
             onUploadProgress: (evt) => {
-              if (evt.total) {
-                updateProgress(Math.round((evt.loaded / evt.total) * 100));
-              }
+              if (evt.total) updateProgress(Math.round((evt.loaded / evt.total) * 100));
             },
           }
         );
 
-        // Update status and start polling
-        setUploadStatuses(prev => prev.map((status, idx) => 
-          idx === i ? {
-            ...status,
-            taskId: response.data.image_id,
-            status: "processing",
-            message: "Processing started"
-          } : status
+        setUploadStatuses(prev => prev.map((status, idx) =>
+          idx === i
+            ? { ...status, taskId: response.data.image_id, status: "processing", message: "Processing started" }
+            : status
         ));
 
-        // Start polling for this file
         checkStatus(file.name, response.data.image_id);
 
       } catch (err: any) {
-        setUploadStatuses(prev => prev.map((status, idx) => 
-          idx === i ? {
-            ...status,
-            status: "error",
-            message: err.response?.data?.detail || "Upload failed"
-          } : status
+        setUploadStatuses(prev => prev.map((status, idx) =>
+          idx === i
+            ? { ...status, status: "error", message: err.response?.data?.detail || "Upload failed" }
+            : status
         ));
       }
     }
@@ -145,9 +128,37 @@ export function useTrainUploader() {
     setUploading(false);
   };
 
-  return { 
-    uploading, 
+  // Reupload a single file
+  const reuploadFile = async (fileName: string, label: string) => {
+    const file = uploadStatuses.find(s => s.fileName === fileName);
+    if (!file) return alert("File not found for reupload");
+
+    setUploadStatuses(prev => prev.map(s =>
+      s.fileName === fileName ? { ...s, status: "uploading", progress: 0, message: "" } : s
+    ));
+
+    const fileObj = (window as any).selectedFiles?.find((f: File) => f.name === fileName);
+    if (!fileObj) return alert("File object not found");
+
+    await uploadImages([fileObj], label);
+  };
+
+  // Trigger model training
+  const trainModel = async () => {
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`);
+      return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      throw new Error("Failed to start training:");
+    }
+  };
+
+  return {
+    uploading,
     uploadStatuses,
-    uploadImages 
+    uploadImages,
+    reuploadFile,
+    trainModel
   };
 }
