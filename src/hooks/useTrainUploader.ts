@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import axios from "axios";
 
 export interface UploadStatus {
@@ -155,21 +155,37 @@ export function useTrainUploader() {
   // ------------------------
   const trainModel = async () => {
     try {
-    // DO NOT BLOCK UI — fire and forget
-    axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`)
-        .catch(() => {
-          console.warn("Training API returned error, but training may still be running.");
-        });
+      // Start training via API
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`)
+        .catch(() => console.warn("Training API may still be running."));
 
-      const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
-      ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
-      ws.onmessage = (e) => setTrainLogs(prev => [...prev, e.data]);
+      // Open WS if not already connected
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/ws/train`);
+        wsRef.current = ws;
+
+        ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
+        ws.onmessage = (e) => setTrainLogs(prev => [...prev, e.data]);
+        ws.onclose = (e) => setTrainLogs(prev => [...prev, `🛑 WS closed (${e.code})`]);
+        ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error`]);
+      }
 
       return { message: "Training started" };
     } catch (err) {
       throw new Error("Failed to start training");
     }
   };
+
+  // ------------------------
+  // Optional: auto cleanup on unmount
+  // ------------------------
+  useEffect(() => {
+    return () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
 
   return {
     uploading,
