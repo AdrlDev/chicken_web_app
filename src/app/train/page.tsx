@@ -157,7 +157,7 @@ export default function UploadPage() {
               {status.status === "error" && (
                 <button
                   className="mt-2 w-full py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                  onClick={() => reuploadFile(status.fileName, selectedLabel)}
+                  onClick={() => reuploadFile(status.fileName, selectedLabel, selectedFiles)}
                 >
                   Reupload
                 </button>

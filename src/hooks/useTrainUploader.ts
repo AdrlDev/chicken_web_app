@@ -137,16 +137,13 @@ export function useTrainUploader() {
   // ------------------------
   // Reupload single file
   // ------------------------
-  const reuploadFile = async (fileName: string, label: string) => {
-    const file = uploadStatuses.find(s => s.fileName === fileName);
-    if (!file) return alert("File not found for reupload");
+  const reuploadFile = async (fileName: string, label: string, selectedFiles: File[]) => {
+    const fileObj = selectedFiles.find(f => f.name === fileName);
+    if (!fileObj) return alert("File object not found");
 
     setUploadStatuses(prev => prev.map(s =>
       s.fileName === fileName ? { ...s, status: "uploading", progress: 0, message: "" } : s
     ));
-
-    const fileObj = (window as any).selectedFiles?.find((f: File) => f.name === fileName);
-    if (!fileObj) return alert("File object not found");
 
     await uploadImages([fileObj], label);
   };
