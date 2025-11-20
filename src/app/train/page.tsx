@@ -201,7 +201,7 @@ export default function UploadPage() {
           }
         </button>
 
-        {uploadStatuses.length > 0 && uploadStatuses.every(s => s.status === "completed") && (
+        {uploadStatuses.length > 0 && uploadStatuses.some(s => s.status === "completed") && (
           <button
             className="w-full py-3 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700"
             onClick={handleTrainModel}
