@@ -2,14 +2,13 @@
 
 import { ReactNode } from "react";
 import { useTheme } from "./themes/ThemeContext";
-import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 
 interface BackgroundProps {
   children: ReactNode;
 }
 
 export default function Background({ children }: BackgroundProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <div

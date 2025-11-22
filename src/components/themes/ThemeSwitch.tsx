@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "./ThemeContext";
-import { SunIcon, MoonIcon, StarIcon } from "@heroicons/react/24/solid";
+import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
 import React from "react";
 
 export default function ThemeSwitch() {
