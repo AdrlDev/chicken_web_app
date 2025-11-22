@@ -3,7 +3,10 @@
 import React from "react";
 import { Detection } from "@/domain/entities/Detection";
 import DetectionOverlay from "./DetectionOverlay";
-import { useRouter } from "next/navigation"; // ✅ for navigation
+import { useRouter } from "next/navigation";
+import { useTheme } from "@/components/themes/ThemeContext";
+import { CameraIcon, PhotoIcon, VideoCameraIcon } from "@heroicons/react/24/solid";
+import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -13,92 +16,104 @@ interface Props {
   detections: Detection[];
 }
 
-export const CameraView: React.FC<Props> = ({
+export default function CameraView({
   videoRef,
   onToggleCamera,
   isActive,
   error,
   detections,
-}) => {
+}: Props) {
   const router = useRouter();
+  const { theme } = useTheme();
+
+  const textColor = theme === "dark" ? "text-gray-300" : "text-gray-900";
+  const cardBg = theme === "dark" ? "bg-gray-800/60 border-gray-700" : "bg-white/80 border-gray-200";
+  const buttonActive = theme === "dark"
+    ? "bg-gradient-to-r from-green-500 to-emerald-400 text-white shadow"
+    : "bg-gradient-to-r from-green-400 to-lime-400 text-gray-900 shadow";
+  const buttonInactive = theme === "dark"
+    ? "text-gray-200 hover:bg-white/5"
+    : "text-gray-900 hover:bg-black/5";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white relative p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">
-        🐔 Chicken Scanner Live
-      </h1>
+    <>
+      <div className="flex flex-col items-center pt-32 px-4 pb-8 md:pb-16">
+        {/* Heading */}
+        <div className={`text-center mb-6 ${textColor}`}>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            🐔 Chicken Scanner Live
+          </h2>
+          <p className="mt-2 max-w-2xl mx-auto">
+            Real-time camera scanning and quick uploads.
+          </p>
+        </div>
 
-      {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
+        {/* Video Card */}
+        <div
+          className={`w-full md:w-4/5 lg:w-3/4 ${cardBg} border rounded-2xl shadow-xl overflow-hidden relative`}
+          style={{ aspectRatio: "16 / 9", maxWidth: "1200px" }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}
+            style={{ transform: "scaleX(-1)" }}
+          />
 
-      <div
-        className="relative rounded-xl border border-gray-700 bg-gray-800 overflow-hidden flex items-center justify-center"
-        style={{
-          width: "80%",
-          maxWidth: "640px",
-          aspectRatio: "4 / 3",
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${
-            isActive ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ transform: "scaleX(-1)" }}
+          {!isActive && (
+            <div className={`absolute inset-0 flex flex-col items-center justify-center ${textColor} bg-gradient-to-b from-transparent to-black/20`}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-20 h-20 mb-3 opacity-80"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 10.5L19.5 6.75m0 0L23.25 10.5M19.5 6.75v10.5M4.5 6.75h9.75a2.25 2.25 0 012.25 2.25v6.75a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V9a2.25 2.25 0 012.25-2.25z"
+                />
+              </svg>
+              <p className="text-xl font-medium">Camera is Off</p>
+            </div>
+          )}
+
+          {isActive && (
+            <div className="absolute inset-0 pointer-events-none">
+              <DetectionOverlay videoRef={videoRef} detections={detections} />
+            </div>
+          )}
+        </div>
+
+        {/* Buttons */}
+        <ActionButtonGroup
+          buttons={[
+            {
+              label: isActive ? "Stop Camera" : "Start Camera",
+              onClick: onToggleCamera,
+              icon: <CameraIcon className="w-5 h-5" />,
+              isActive: isActive,
+              theme: theme,
+            },
+            {
+              label: "Upload Image",
+              onClick: () => router.push("/upload"),
+              icon: <PhotoIcon className="w-5 h-5" />,
+            },
+            {
+              label: "Upload Video",
+              onClick: () => router.push("/video"),
+              icon: <VideoCameraIcon className="w-5 h-5" />,
+            },
+          ]}
         />
 
-        {isActive ? (
-          <DetectionOverlay videoRef={videoRef} detections={detections} />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-800/80">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-16 h-16 mb-3 opacity-70"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 10.5L19.5 6.75m0 0L23.25 10.5M19.5 6.75v10.5M4.5 6.75h9.75a2.25 2.25 0 012.25 2.25v6.75a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V9a2.25 2.25 0 012.25-2.25z"
-              />
-            </svg>
-            <p className="text-lg font-medium">Camera is Off</p>
-          </div>
-        )}
+        {error && <p className={`mt-4 text-center ${theme === "dark" ? "text-red-400" : "text-red-600"}`}>{error}</p>}
       </div>
-
-      {/* ✅ Action Buttons */}
-      <div className="flex gap-4 mt-6">
-        <button
-          onClick={onToggleCamera}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
-            isActive
-              ? "bg-red-500 hover:bg-red-600"
-              : "bg-green-500 hover:bg-green-600"
-          }`}
-        >
-          {isActive ? "Stop Camera" : "Start Camera"}
-        </button>
-
-        {/* 🖼️ Upload Button */}
-        <button
-          onClick={() => router.push("/upload")}
-          className="px-6 py-3 rounded-lg font-semibold bg-blue-500 hover:bg-blue-600 transition"
-        >
-          Upload Image
-        </button>
-        <button
-          onClick={() => router.push("/video")}
-          className="px-6 py-3 rounded-lg font-semibold bg-blue-500 hover:bg-blue-600 transition"
-        >
-          Upload Video
-        </button>
-      </div>
-    </div>
+    </>
   );
-};
+}

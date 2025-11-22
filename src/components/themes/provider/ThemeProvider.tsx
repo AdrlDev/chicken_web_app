@@ -1,18 +1,11 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
 import Background from "@/components/Background";
-import { ThemeProvider } from "@/components/themes/ThemeContext";
-import Footer from "@/components/footer/Footer";
+import { ThemeProvider } from "../ThemeContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Chicken Detection",
-  description: "Can detect chicken if healthy or not healthy chicken",
-};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -26,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </header>
             <main className="relative z-10">{children}</main>
           </Background>
-          <Footer />
         </ThemeProvider>
       </body>
     </html>

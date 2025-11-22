@@ -2,7 +2,8 @@
 
 import { useCamera } from "@/hooks/useCamera";
 import { useDetectionSocket } from "@/hooks/useDetectionSocket";
-import { CameraView } from "@/components/CameraView";
+import CameraView from "@/components/CameraView";
+import { motion } from "framer-motion";
 
 export default function CameraPage() {
   const { videoRef, startCamera, stopCamera, isActive, error } = useCamera();
@@ -11,14 +12,26 @@ export default function CameraPage() {
   console.log(detections)
 
   return (
-    <main>
+    <>
       <CameraView
-        videoRef={videoRef}
-        onToggleCamera={isActive ? stopCamera : startCamera}
-        isActive={isActive}
-        error={error}
-        detections={detections}
+            videoRef={videoRef}
+            onToggleCamera={isActive ? stopCamera : startCamera}
+            isActive={isActive}
+            error={error}
+            detections={detections}
+          />
+      {/* Background subtle animation circles */}
+      <motion.div
+        className="absolute top-0 left-1/2 w-[500px] h-[500px] -translate-x-1/2 rounded-full bg-indigo-500 opacity-10 blur-3xl"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
       />
-    </main>
+      <motion.div
+        className="absolute bottom-0 right-1/3 w-[400px] h-[400px] rounded-full bg-green-500 opacity-10 blur-3xl"
+        animate={{ rotate: -360 }}
+        transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+      />
+    </>
+    
   );
 }
