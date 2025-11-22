@@ -43,20 +43,29 @@ export default function ImagePreviewGrid({
   const { theme } = useTheme();
   const [showAll, setShowAll] = useState(false);
   const [fileItems, setFileItems] = useState<FileItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Generate object URLs for local files
   useEffect(() => {
-    const newFileItems: FileItem[] = selectedFiles.map((file) => ({
-      type: "local",
-      file,
-      url: URL.createObjectURL(file),
-    }));
+    if (selectedFiles.length === 0) return;
 
-    setFileItems(newFileItems);
+    setLoading(true);
 
-    // Revoke URLs on cleanup
+    // Use a small timeout to show loading state
+    const timeout = setTimeout(() => {
+      const newFileItems: FileItem[] = selectedFiles.map((file) => ({
+        type: "local",
+        file,
+        url: URL.createObjectURL(file),
+      }));
+
+      setFileItems(newFileItems);
+      setLoading(false);
+    }, 50); // small delay to trigger loading overlay
+
     return () => {
-      newFileItems.forEach((item) => URL.revokeObjectURL(item.url));
+      clearTimeout(timeout);
+      fileItems.forEach((item) => URL.revokeObjectURL(item.url));
     };
   }, [selectedFiles]);
 
@@ -68,7 +77,14 @@ export default function ImagePreviewGrid({
   const itemsToShow = showAll ? allItems : allItems.slice(0, 6);
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 relative">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-gray-900/70 rounded-lg">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <AnimatePresence>
           {itemsToShow.map((item, idx) => {
