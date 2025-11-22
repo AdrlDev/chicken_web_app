@@ -58,7 +58,7 @@ const ImageDetectionOverlay: React.FC<Props> = ({ imageRef, detections }) => {
       const [x1, y1, x2, y2] = det.bbox;
       const label = det.label ?? "object";
       const color = labelColors[label] || labelColors.default;
-      const confidence = (det.confidence * 100).toFixed(1) + "%";
+      const confidence = ((det.confidence ?? 0) * 100).toFixed(1) + "%";
 
       // Scale bbox coordinates to fit displayed image size
       const sx1 = x1 * scaleX;
