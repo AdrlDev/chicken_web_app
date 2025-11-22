@@ -24,12 +24,15 @@ interface ImagePreviewGridProps {
 type FileItem = {
   type: "local";
   file: File;
-  url: string;
+  url?: string;
+  loading?: boolean;
 };
 
 type StatusItem = {
   type: "status";
   status: UploadStatus;
+  loading?: boolean;
+  url?: string;
 };
 
 type Item = FileItem | StatusItem;
@@ -43,60 +46,73 @@ export default function ImagePreviewGrid({
   const { theme } = useTheme();
   const [showAll, setShowAll] = useState(false);
   const [fileItems, setFileItems] = useState<FileItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [statusItems, setStatusItems] = useState<StatusItem[]>([]);
 
   // Generate object URLs for local files
   useEffect(() => {
-    if (selectedFiles.length === 0) return;
+    const newItems: FileItem[] = selectedFiles.map((file) => ({
+      type: "local",
+      file,
+      loading: true,
+    }));
 
-    setLoading(true);
+    setFileItems(newItems);
 
-    // Use a small timeout to show loading state
-    const timeout = setTimeout(() => {
-      const newFileItems: FileItem[] = selectedFiles.map((file) => ({
-        type: "local",
-        file,
-        url: URL.createObjectURL(file),
-      }));
-
-      setFileItems(newFileItems);
-      setLoading(false);
-    }, 50); // small delay to trigger loading overlay
+    newItems.forEach((item, idx) => {
+      const url = URL.createObjectURL(item.file);
+      setTimeout(() => {
+        setFileItems((prev) => {
+          const updated = [...prev];
+          updated[idx] = { ...item, url, loading: false };
+          return updated;
+        });
+      }, 50);
+    });
 
     return () => {
-      clearTimeout(timeout);
-      fileItems.forEach((item) => URL.revokeObjectURL(item.url));
+      newItems.forEach((item) => item.url && URL.revokeObjectURL(item.url));
     };
   }, [selectedFiles]);
 
-  const allItems: Item[] = [
-    ...fileItems,
-    ...uploadStatuses.map<StatusItem>((status) => ({ type: "status", status })),
-  ];
+  // Track loading for uploaded status images
+  useEffect(() => {
+    const newStatusItems: StatusItem[] = uploadStatuses.map((status) => ({
+      type: "status",
+      status,
+      loading: true,
+      url: status.fileName.startsWith("http") ? status.fileName : undefined,
+    }));
+    setStatusItems(newStatusItems);
+  }, [uploadStatuses]);
 
+  const handleStatusImageLoad = (idx: number) => {
+    setStatusItems((prev) => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], loading: false };
+      return updated;
+    });
+  };
+
+  const allItems: Item[] = [...fileItems, ...statusItems];
   const itemsToShow = showAll ? allItems : allItems.slice(0, 6);
 
   return (
     <div className="mt-6 relative">
-      {/* Loading Overlay */}
-      {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-gray-900/70 rounded-lg">
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <AnimatePresence>
           {itemsToShow.map((item, idx) => {
             let src: string | undefined;
             let fileName: string;
+            let isLoading = false;
 
             if (item.type === "local") {
               src = item.url;
               fileName = item.file.name;
+              isLoading = item.loading ?? false;
             } else {
               fileName = item.status.fileName;
-              src = item.status.fileName.startsWith("http") ? item.status.fileName : undefined;
+              src = item.url;
+              isLoading = item.loading ?? false;
             }
 
             return (
@@ -107,8 +123,9 @@ export default function ImagePreviewGrid({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.3 }}
-                className="relative rounded-lg overflow-hidden shadow-md border border-gray-200 h-40"
+                className="relative rounded-lg overflow-hidden shadow-md border border-gray-200 h-40 flex items-center justify-center bg-gray-100 dark:bg-gray-800"
               >
+                {/* Image */}
                 {src && (
                   <Image
                     src={src}
@@ -116,7 +133,15 @@ export default function ImagePreviewGrid({
                     fill
                     style={{ objectFit: "cover" }}
                     unoptimized
+                    onLoadingComplete={() => item.type === "status" && handleStatusImageLoad(idx - fileItems.length)}
                   />
+                )}
+
+                {/* Loading Overlay */}
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-900/70">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
+                  </div>
                 )}
 
                 {/* Status Overlay */}
@@ -129,11 +154,11 @@ export default function ImagePreviewGrid({
                 )}
 
                 {/* File Name */}
-                <p className="text-xs mt-1 text-center text-gray-500 truncate">{fileName}</p>
+                <p className="text-xs mt-1 text-center text-gray-500 truncate absolute bottom-1 left-0 w-full px-1">{fileName}</p>
 
                 {/* Progress Bar */}
                 {item.type === "status" && (item.status.status === "uploading" || item.status.status === "processing") && (
-                  <div className="w-full bg-gray-200 h-2 mt-1">
+                  <div className="w-full bg-gray-200 h-2 mt-1 absolute bottom-0 left-0">
                     <div
                       className={`h-2 rounded-full transition-all duration-300 ${
                         item.status.status === "processing" ? "bg-yellow-500" : "bg-blue-500"
