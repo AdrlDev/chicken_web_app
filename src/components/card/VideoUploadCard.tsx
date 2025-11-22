@@ -97,7 +97,7 @@ export default function VideoUploadCard({
 
       {/* Video & Overlay */}
       {previewUrl && (
-        <div className="relative w-full min-h-[250px]">
+        <div className="relative w-full f-full">
           <video
             ref={videoRef}
             src={previewUrl}

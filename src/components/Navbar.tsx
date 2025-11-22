@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Dialog, DialogPanel } from "@headlessui/react";
+import Link from "next/link";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useTheme } from "./themes/ThemeContext";
 import ThemeSwitch from "./themes/ThemeSwitch";
@@ -12,7 +12,7 @@ const navigation = [
   { name: "Home", href: "/" },
   { name: "Scan", href: "/camera" },
   { name: "Train", href: "/train" },
-  { name: "About", href: "/about" },
+  { name: "About", href: "/about" }, // example page not implemented
 ];
 
 export default function Navbar() {
@@ -21,16 +21,19 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Redirect to implemented page or custom 404
   const handleNavClick = (href: string) => {
-    const exists = navigation.some((item) => item.href === href);
-    router.push(exists ? href : "/not-found");
+    const implementedPages = ["/", "/camera", "/train"]; // add all implemented pages here
+    router.push(implementedPages.includes(href) ? href : "/not-found");
     setMobileMenuOpen(false);
   };
 
   const renderNavButtons = (isMobile = false) =>
     navigation.map((item) => {
       const isActive = pathname === item.href;
-      const baseClasses = `block ${isMobile ? "w-full text-left px-3 py-2 rounded-lg" : "relative text-sm font-semibold"} transition-colors duration-300`;
+      const baseClasses = `block ${
+        isMobile ? "w-full text-left px-3 py-2 rounded-lg" : "relative text-sm font-semibold"
+      } transition-colors duration-300`;
       const activeClasses = isActive
         ? theme === "dark"
           ? "text-indigo-400"
@@ -62,9 +65,7 @@ export default function Navbar() {
       {/* Navbar */}
       <nav
         className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between p-6 lg:px-8 transition-colors duration-500 backdrop-blur-lg shadow-lg ${
-          theme === "dark"
-            ? "bg-gray-900/30 text-white"
-            : "bg-white/30 text-gray-900"
+          theme === "dark" ? "bg-gray-900/30 text-white" : "bg-white/30 text-gray-900"
         }`}
       >
         {/* Logo */}
@@ -123,7 +124,7 @@ export default function Navbar() {
               </h1>
             </Link>
 
-            {/* Only close button on top */}
+            {/* Close button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
@@ -134,7 +135,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Navigation + ThemeSwitch inside menu */}
+          {/* Navigation + ThemeSwitch */}
           <div className="mt-6 flex flex-col gap-4">
             {renderNavButtons(true)}
             <div className="mt-4">
