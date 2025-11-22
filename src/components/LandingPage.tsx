@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useTheme } from "./themes/ThemeContext";
+import { useTheme } from "@/components/themes/ThemeContext";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 import { VideoCameraIcon, CogIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
