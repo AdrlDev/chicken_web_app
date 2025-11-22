@@ -20,7 +20,7 @@ export const VideoUpload: React.FC = () => {
   console.log(result)
 
   return (
-    <div className={`flex flex-col items-center mt-22 justify-center min-h-screen ${textColor} p-6`}>
+    <div className={`flex flex-col items-center pt-32 px-4 pb-8 md:pb-16 ${textColor}`}>
       <h1 className="text-3xl font-bold mb-6 text-center">
         🎥 Chicken Video Detection (Live)
       </h1>
