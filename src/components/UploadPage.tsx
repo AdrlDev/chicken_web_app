@@ -1,14 +1,15 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useImageDetectionSocket } from "@/hooks/useImageDetectionSocket";
 import { useTheme } from "@/components/themes/ThemeContext";
-import { PhotoIcon } from "@heroicons/react/24/solid";
+import { PhotoIcon, BackwardIcon } from "@heroicons/react/24/solid";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 import DetectionCard from "@/components/card/DetectionCard";
 
 export default function UploadPage() {
+  const router = useRouter();
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const { detections, sendImage, isConnected, error } = useImageDetectionSocket();
@@ -55,10 +56,17 @@ export default function UploadPage() {
         <ActionButtonGroup
           buttons={[
             {
+              label: "Back to Camera",
+              onClick: () => router.push("/camera"),
+              icon: <BackwardIcon className="w-5 h-5" />,
+              theme: theme
+            },
+            {
               label: "Choose Image",
               onClick: () => document.getElementById("upload-input")?.click(),
               icon: <PhotoIcon className="w-5 h-5" />,
-            },
+              theme: theme
+            }
           ]}
         />
         {/* Hidden file input */}
