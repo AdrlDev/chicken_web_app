@@ -36,7 +36,7 @@ export default function ActionButtonGroup({ buttons }: Props) {
 
           const buttonInactive =
             theme === "dark"
-              ? "text-gray-200 hover:bg-white/10"
+              ? "text-white hover:bg-white/10"
               : "text-gray-900 hover:bg-black/10";
 
           return (
@@ -47,7 +47,7 @@ export default function ActionButtonGroup({ buttons }: Props) {
             >
               {btn.icon && (
                 <motion.span
-                  className="flex items-center"
+                  className={`flex items-center ${theme === "dark" ? "text-white" : ""}`}
                   whileHover={{ scale: 1.2, rotate: 15 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >

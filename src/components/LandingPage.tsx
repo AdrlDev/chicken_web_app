@@ -3,22 +3,33 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { useTheme } from "./themes/ThemeContext";
+import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
+import { VideoCameraIcon, CogIcon } from "@heroicons/react/24/solid";
+import { useRouter } from "next/navigation";
 
 // Animated icon component
-const AnimatedIcon = ({ src, alt, delay = 0 }: { src: string; alt: string; delay?: number }) => (
+const AnimatedIcon = ({ src, alt, delay = 0, theme }: { src: string; alt: string; delay?: number; theme: "light" | "dark" }) => (
   <motion.div
     initial={{ y: -20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ duration: 1, delay, repeat: Infinity, repeatType: "reverse" }}
     className="w-20 h-20 md:w-24 md:h-24 relative"
   >
-    <Image src={src} alt={alt} fill style={{ objectFit: "contain" }} />
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      style={{
+        objectFit: "contain",
+        filter: theme === "dark" ? "invert(1) brightness(1.2)" : "none",
+      }}
+    />
   </motion.div>
 );
 
 export default function LandingPage() {
+  const router = useRouter();
   const { theme } = useTheme();
   const textColor = theme === "dark" ? "text-gray-100" : "text-gray-900";
   const subTextColor = theme === "dark" ? "text-gray-300" : "text-gray-700";
@@ -35,25 +46,29 @@ export default function LandingPage() {
         </p>
 
         {/* Call to action */}
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
-          <Link href="/camera">
-            <button className="px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-500 transition-all duration-300">
-              Start Scanning
-            </button>
-          </Link>
-          <Link href="/train">
-            <button className="px-6 py-3 bg-gray-200 text-gray-900 rounded-full font-semibold hover:bg-gray-300 transition-all duration-300">
-              Train Model
-            </button>
-          </Link>
-        </div>
+        <ActionButtonGroup
+            buttons={[
+              {
+                label: "Start Scanning",
+                theme: theme,
+                onClick: () => router.push("/camera"),
+                icon: <VideoCameraIcon className="w-5 h-5" />,
+              },
+              {
+                label: "Train Model",
+                theme: theme,
+                onClick: () => router.push("/train"),
+                icon: <CogIcon className="w-5 h-5" />,
+              },
+            ]}
+        />
       </div>
 
       {/* Animated Icons */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex gap-8 md:gap-12">
-        <AnimatedIcon src="/icons/chicken1.svg" alt="Healthy Chicken" delay={0} />
-        <AnimatedIcon src="/icons/virus.svg" alt="Disease Detection" delay={0.3} />
-        <AnimatedIcon src="/icons/chicken2.svg" alt="Scanned Chicken" delay={0.6} />
+        <AnimatedIcon src="/healthy_chicken.png" alt="Healthy Chicken" delay={0} theme={theme} />
+        <AnimatedIcon src="/disease_chicken.png" alt="Disease Detection" delay={0.3} theme={theme} />
+        <AnimatedIcon src="/scan_chicken.png" alt="Scanned Chicken" delay={0.6} theme={theme} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 export interface Detection {
   label: string;
-  confidence: number;
+  confidence?: number;
   bbox: number[];
 }

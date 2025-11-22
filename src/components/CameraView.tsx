@@ -28,12 +28,6 @@ export default function CameraView({
 
   const textColor = theme === "dark" ? "text-gray-300" : "text-gray-900";
   const cardBg = theme === "dark" ? "bg-gray-800/60 border-gray-700" : "bg-white/80 border-gray-200";
-  const buttonActive = theme === "dark"
-    ? "bg-gradient-to-r from-green-500 to-emerald-400 text-white shadow"
-    : "bg-gradient-to-r from-green-400 to-lime-400 text-gray-900 shadow";
-  const buttonInactive = theme === "dark"
-    ? "text-gray-200 hover:bg-white/5"
-    : "text-gray-900 hover:bg-black/5";
 
   return (
     <>
@@ -103,11 +97,13 @@ export default function CameraView({
               label: "Upload Image",
               onClick: () => router.push("/upload"),
               icon: <PhotoIcon className="w-5 h-5" />,
+              theme: theme,
             },
             {
               label: "Upload Video",
               onClick: () => router.push("/video"),
               icon: <VideoCameraIcon className="w-5 h-5" />,
+              theme: theme,
             },
           ]}
         />
