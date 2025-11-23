@@ -57,7 +57,7 @@ const ImageDetectionOverlay: React.FC<Props> = ({ imageRef, detections }) => {
       // Draw bounding box
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
-      ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
+      roundRect(ctx, sx1, sy1, sx2 - sx1, sy2 - sy1, 6, false, true);
 
       // Dynamic font size
       const boxHeight = sy2 - sy1;
