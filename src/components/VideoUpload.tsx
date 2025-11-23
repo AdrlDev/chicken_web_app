@@ -1,3 +1,4 @@
+// VideoUpload.tsx
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -17,19 +18,18 @@ export const VideoUpload: React.FC = () => {
 
   const textColor = theme === "dark" ? "text-gray-300" : "text-gray-900";
 
-  console.log(result)
-
   return (
     <div className={`flex flex-col items-center pt-32 px-4 pb-8 md:pb-16 ${textColor}`}>
       <h1 className="text-3xl font-bold mb-6 text-center">
         🎥 Chicken Video Detection (Live)
       </h1>
 
+      {/* Video Upload Card */}
       <VideoUploadCard
         videoRef={videoRef}
         previewUrl={previewUrl}
         setPreviewUrl={setPreviewUrl}
-        detections={result.map(r => ({ ...r, confidence: r.confidence ?? 0 }))}
+        detections={result.map((r) => ({ ...r, confidence: r.confidence ?? 0 }))}
         startDetection={startDetection}
         stopDetection={stopDetection}
         onFileSelected={(file) => console.log("Selected file", file)}

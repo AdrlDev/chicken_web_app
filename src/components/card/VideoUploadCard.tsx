@@ -1,9 +1,12 @@
+//VideoUploadCard
+
 import React, { DragEvent, useRef } from "react";
 import { Detection } from "@/domain/entities/Detection";
 import VideoOverlay from "@/components/overlays/VideoOverlay";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 import { VideoCameraSlashIcon } from "@heroicons/react/24/solid";
 import { useTheme } from "@/components/themes/ThemeContext";
+import { getYouTubeEmbedUrl } from "@/utils/canvasUtils";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -42,6 +45,8 @@ export default function VideoUploadCard({
   const bg = theme === "dark" ? "bg-gray-800 border-gray-600" : "bg-gray-100 border-gray-300";
   const hoverBg = theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-200";
   const text = theme === "dark" ? "text-gray-200" : "text-gray-600";
+
+  const youtubeEmbed = previewUrl ? getYouTubeEmbedUrl(previewUrl) : null;
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
 
@@ -100,19 +105,29 @@ export default function VideoUploadCard({
 
         {/* Video & Overlay */}
         {previewUrl && (
-          <div className="absolute inset-0 w-full h-full pointer-events-none">
-            <video
-              ref={videoRef}
-              src={previewUrl}
-              autoPlay
-              muted
-              playsInline
-              loop
-              className="absolute inset-0 w-full h-full rounded-2xl object-cover pointer-events-auto"
-              onPlay={startDetection}
-              onPause={stopDetection}
-              onEnded={stopDetection}
-            />
+          <div className="absolute inset-0 w-full h-full">
+            {youtubeEmbed ? (
+              <iframe
+                src={youtubeEmbed}
+                allow="autoplay; fullscreen"
+                className="w-full h-full rounded-2xl"
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full rounded-2xl object-cover"
+                onPlay={startDetection}
+                onPause={stopDetection}
+                onEnded={stopDetection}
+              >
+                <source src={previewUrl} />
+                Your browser does not support the video tag.
+              </video>
+            )}
 
             <VideoOverlay videoRef={videoRef} detections={detections} />
 

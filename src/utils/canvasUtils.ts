@@ -63,3 +63,13 @@ export const labelColors: Record<string, string> = {
   "mycotic infections": "#ffdc5eff",
   default: "#00FF00",
 };
+
+/**
+ * Get Youtube Video Embed Url
+ */
+export function getYouTubeEmbedUrl(url: string) {
+  // naive way to extract YouTube video ID
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu.be\/)([^&]+)/);
+  if (!match) return null;
+  return `https://www.youtube.com/embed/${match[1]}`;
+}
