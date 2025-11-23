@@ -36,7 +36,7 @@ export default function DetectionCard({
             ref={imageRef}
             src={imageSrc}
             alt="Uploaded"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-fill"
           />
           <ImageDetectionOverlay imageRef={imageRef} detections={detections} />
         </>
