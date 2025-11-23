@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Detection } from "@/domain/entities/Detection";
-import DetectionOverlay from "./DetectionOverlay";
+import DetectionOverlay from "./overlays/DetectionOverlay";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/themes/ThemeContext";
 import { CameraIcon, PhotoIcon, VideoCameraIcon } from "@heroicons/react/24/solid";

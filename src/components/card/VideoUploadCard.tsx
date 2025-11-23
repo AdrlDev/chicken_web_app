@@ -1,6 +1,6 @@
 import React, { DragEvent, useRef } from "react";
 import { Detection } from "@/domain/entities/Detection";
-import VideoOverlay from "@/components/VideoOverlay";
+import VideoOverlay from "@/components/overlays/VideoOverlay";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 import { VideoCameraSlashIcon } from "@heroicons/react/24/solid";
 import { useTheme } from "@/components/themes/ThemeContext";

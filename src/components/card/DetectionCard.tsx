@@ -3,7 +3,7 @@
 
 import React from "react";
 import { useTheme } from "@/components/themes/ThemeContext";
-import ImageDetectionOverlay from "@/components/ImageDetectionOverlay";
+import ImageDetectionOverlay from "@/components/overlays/ImageDetectionOverlay";
 import { Detection } from "@/domain/entities/Detection";
 
 interface Props {

@@ -1,33 +1,18 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-
-interface DetectionBox {
-  bbox: number[];
-  label: string;
-  confidence?: number;
-}
+import { Detection } from "@/domain/entities/Detection";
+import { roundRect, hexToRgba, labelColors } from "@/utils/canvasUtils";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  detections: DetectionBox[] | null;
+  detections: Detection[] | null;
 }
-
-const labelColors: Record<string, string> = {
-  "avian Influenza": "#ff9341ff",
-  "blue comb": "#00fffbff",
-  "coccidiosis": "#da4e4eff",
-  "coccidiosis poops": "#cc0909ff",
-  "fowl cholera": "#f188f3ff",
-  "fowl-pox": "#ff00bfff",
-  "mycotic infections": "#ffdc5eff",
-  default: "#00FF00",
-};
 
 const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 🟢 Resize only when video or window changes
+  // Resize canvas when video or window changes
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -50,7 +35,7 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     };
   }, [videoRef]);
 
-  // 🎯 Draw only when detections change
+  // Draw bounding boxes when detections change
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -60,8 +45,21 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     if (!ctx) return;
 
     const rect = video.getBoundingClientRect();
-    const scaleX = rect.width / video.videoWidth;
-    const scaleY = rect.height / video.videoHeight;
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const rectRatio = rect.width / rect.height;
+
+    let scaleX = rect.width / video.videoWidth;
+    let scaleY = rect.height / video.videoHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (rectRatio > videoRatio) {
+      scaleX = scaleY;
+      offsetX = (rect.width - video.videoWidth * scaleX) / 2;
+    } else {
+      scaleY = scaleX;
+      offsetY = (rect.height - video.videoHeight * scaleY) / 2;
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -69,26 +67,34 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
       if (!det.bbox || det.bbox.length < 4) return;
 
       const [x1, y1, x2, y2] = det.bbox;
-      const sx1 = x1 * scaleX;
-      const sy1 = y1 * scaleY;
-      const sx2 = x2 * scaleX;
-      const sy2 = y2 * scaleY;
+      const sx1 = x1 * scaleX + offsetX;
+      const sy1 = y1 * scaleY + offsetY;
+      const sx2 = x2 * scaleX + offsetX;
+      const sy2 = y2 * scaleY + offsetY;
 
       const color = labelColors[det.label] || labelColors.default;
       const confidence = ((det.confidence ?? 0) * 100).toFixed(1) + "%";
       const label = `${det.label} (${confidence})`;
 
+      // Draw bounding box
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
 
-      ctx.font = "bold 14px Arial";
+      // Dynamic font size
+      const boxHeight = sy2 - sy1;
+      const fontSize = Math.max(Math.min(boxHeight / 5, 20), 10); // 10px min, 20px max
+      ctx.font = `bold ${fontSize}px Arial`;
+
       const textWidth = ctx.measureText(label).width + 8;
-      const textHeight = 18;
+      const textHeight = fontSize + 6;
 
-      ctx.fillStyle = color;
-      ctx.fillRect(sx1, sy1 - textHeight, textWidth, textHeight);
+      // Draw semi-transparent, rounded label background
+      const radius = Math.min(6, textHeight / 2);
+      ctx.fillStyle = hexToRgba(color, 0.7); // 70% opacity
+      roundRect(ctx, sx1, sy1 - textHeight, textWidth, textHeight, radius, true, false);
 
+      // Draw text
       ctx.fillStyle = "#000";
       ctx.fillText(label, sx1 + 4, sy1 - 4);
     });

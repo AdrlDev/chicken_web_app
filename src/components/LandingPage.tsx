@@ -41,7 +41,7 @@ export default function LandingPage() {
         <h1 className={`text-4xl md:text-6xl font-extrabold mb-4 ${textColor}`}>
           🐔 Chicken Scanner
         </h1>
-        <p className={`text-lg md:text-xl mb-8 ${subTextColor}`}>
+        <p className={`text-lg md:text-xl mb-12 ${subTextColor}`}>
           Detect poultry diseases in real-time — fast, smart, and reliable.
         </p>
 
