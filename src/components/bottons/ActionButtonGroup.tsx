@@ -8,6 +8,7 @@ interface ActionButton {
   onClick: () => void;
   icon?: ReactNode;
   isActive?: boolean;
+  isEnable?: boolean;
   theme?: "light" | "dark";
 }
 
@@ -24,6 +25,7 @@ export default function ActionButtonGroup({ buttons }: Props) {
       >
         {buttons.map((btn, idx) => {
           const isActive = btn.isActive ?? false;
+          const isEnable = btn.isEnable ?? true;
           const theme = btn.theme ?? "light";
 
           const buttonBase =
@@ -43,12 +45,15 @@ export default function ActionButtonGroup({ buttons }: Props) {
             <button
               key={idx}
               onClick={btn.onClick}
-              className={`${buttonBase} ${isActive ? buttonActive : buttonInactive}`}
+              disabled={!isEnable} // 👈 fix here
+              className={`${buttonBase} ${isActive ? buttonActive : buttonInactive} ${
+                !isEnable ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               {btn.icon && (
                 <motion.span
                   className={`flex items-center ${theme === "dark" ? "text-white" : ""}`}
-                  whileHover={{ scale: 1.2, rotate: 15 }}
+                  whileHover={isEnable ? { scale: 1.2, rotate: 15 } : {}}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
                   {btn.icon}

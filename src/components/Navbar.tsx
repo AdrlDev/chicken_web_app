@@ -32,7 +32,7 @@ export default function Navbar() {
     navigation.map((item) => {
       const isActive = pathname === item.href;
       const baseClasses = `block ${
-        isMobile ? "w-full text-left px-3 py-2 rounded-lg" : "relative text-sm font-semibold"
+        isMobile ? "w-full text-left px-3 py-2 rounded-lg" : "relative text-sm font-semibold group"
       } transition-colors duration-300`;
       const activeClasses = isActive
         ? theme === "dark"
@@ -49,11 +49,12 @@ export default function Navbar() {
           className={`${baseClasses} ${activeClasses}`}
         >
           {item.name}
+
+          {/* Animated underline */}
           {!isMobile && (
             <span
-              className={`absolute left-0 -bottom-1 h-[2px] bg-indigo-500 transition-all duration-300 ${
-                isActive ? "w-full" : "w-0 group-hover:w-full"
-              }`}
+              className={`absolute left-0 -bottom-1 h-[2px] bg-indigo-500 rounded-full transition-all duration-300
+                ${isActive ? "w-full" : "w-0 group-hover:w-full"}`}
             ></span>
           )}
         </button>

@@ -14,7 +14,7 @@ const AnimatedIcon = ({ src, alt, delay = 0, theme }: { src: string; alt: string
     initial={{ y: -20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ duration: 1, delay, repeat: Infinity, repeatType: "reverse" }}
-    className="w-20 h-20 md:w-24 md:h-24 relative"
+    className="w-12 h-12 md:w-16 md:h-16 relative" // ✅ smaller size
   >
     <Image
       src={src}

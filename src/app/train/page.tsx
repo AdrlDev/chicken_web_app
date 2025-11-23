@@ -5,6 +5,7 @@ import TrainLayout from "@/components/TrainLayout";
 import { useTrainUploader } from "@/hooks/useTrainUploader";
 import LabelDropdown from "@/components/dropdown/LabelDropdown";
 import DragDropUpload from "@/components/upload/DragDropUpload";
+import { CogIcon } from "@heroicons/react/24/solid";
 import ImagePreviewGrid from "@/components/upload/ImagePreview"; // use typed version
 import UploadTrainButtons from "@/components/upload/UploadTrainButtons";
 import TrainingLogs from "@/components/upload/TrainingLogs";
@@ -55,7 +56,7 @@ export default function UploadPage() {
     : 0;
 
   return (
-    <TrainLayout title="🐔 Dataset Uploader (ChickenAI)">
+    <TrainLayout title="Dataset Uploader" icon={<CogIcon className="w-6 h-6" />}>
       <LabelDropdown
         labels={labels}
         selectedLabel={selectedLabel}

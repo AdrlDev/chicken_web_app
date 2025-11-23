@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import { useTheme } from "@/components/themes/ThemeContext";
+import { CogIcon, PhotoIcon } from "@heroicons/react/24/solid";
+import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 
 interface UploadTrainButtonsProps {
   uploading: boolean;
@@ -17,32 +20,32 @@ export default function UploadTrainButtons({
   onUpload,
   onTrain,
 }: UploadTrainButtonsProps) {
-  return (
-    <div className="mt-6 space-y-3">
-      <button
-        disabled={uploading || selectedFilesCount === 0}
-        onClick={onUpload}
-        className={`w-full py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
-          uploading || selectedFilesCount === 0
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-green-600 hover:bg-green-700 shadow-md"
-        }`}
-      >
-        {uploading
+  const { theme } = useTheme();
+
+  const buttons = [
+    {
+      label:
+        uploading
           ? "Processing..."
           : selectedFilesCount === 0
-            ? "Select Files to Upload"
-            : `Upload ${selectedFilesCount} File${selectedFilesCount > 1 ? "s" : ""}`}
-      </button>
+            ? "Select Files"
+            : `Upload ${selectedFilesCount} File${selectedFilesCount > 1 ? "s" : ""}`,
+      onClick: onUpload,
+      isEnable: !uploading && selectedFilesCount > 0, // 👈 Disable if no files
+      theme,
+      icon: <PhotoIcon className="w-5 h-5" />,
+    },
+  ];
 
-      {hasCompletedUploads && (
-        <button
-          onClick={onTrain}
-          className="w-full py-3 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 shadow-md transition-all duration-200"
-        >
-          Train Model
-        </button>
-      )}
-    </div>
-  );
+  if (hasCompletedUploads) {
+    buttons.push({
+      label: "Train Model",
+      onClick: onTrain,
+      isEnable: true,
+      theme,
+      icon: <CogIcon className="w-5 h-5" />,
+    });
+  }
+
+  return <ActionButtonGroup buttons={buttons} />;
 }

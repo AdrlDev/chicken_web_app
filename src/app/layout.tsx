@@ -5,9 +5,13 @@ import "./globals.css";
 import Background from "@/components/Background";
 import { ThemeProvider } from "@/components/themes/ThemeContext";
 import Footer from "@/components/footer/Footer";
+import { Poppins } from 'next/font/google'
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans', // optional CSS variable
+})
 
 export const metadata: Metadata = {
   title: "Chicken Detection",
@@ -18,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head />
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${poppins.variable}`}>
         <ThemeProvider>
           <Background>
             <header className="absolute inset-x-0 top-0 z-50">

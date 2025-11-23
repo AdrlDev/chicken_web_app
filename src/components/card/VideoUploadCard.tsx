@@ -1,6 +1,4 @@
-"use client";
-
-import React, { DragEvent } from "react";
+import React, { DragEvent, useRef } from "react";
 import { Detection } from "@/domain/entities/Detection";
 import VideoOverlay from "@/components/VideoOverlay";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
@@ -13,7 +11,6 @@ interface Props {
   setPreviewUrl: (url: string | null) => void;
   onFileSelected?: (file: File) => void;
   detections?: Detection[];
-  aspectRatio?: string;
   maxWidth?: string;
   startDetection?: () => void;
   stopDetection?: () => void;
@@ -25,13 +22,14 @@ export default function VideoUploadCard({
   setPreviewUrl,
   onFileSelected,
   detections = [],
-  aspectRatio = "16 / 9",
   maxWidth = "1200px",
   startDetection,
   stopDetection,
 }: Props) {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
@@ -66,67 +64,73 @@ export default function VideoUploadCard({
     }
   };
 
-  const handlePlay = () => startDetection?.();
-  const handlePause = () => stopDetection?.();
-
   return (
-    <div
-      className="relative w-full bg-gray-800/60 backdrop-blur-md rounded-2xl shadow-xl border border-gray-700 overflow-hidden"
-      style={{ maxWidth, aspectRatio }}
-    >
-      {/* Upload / Drop area */}
-      {!previewUrl && (
-        <div
-          className="flex items-center justify-center z-10 w-full h-full"
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          <div className={`flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-500 rounded-2xl hover:border-blue-400 transition cursor-pointer p-6 text-center ${bg} ${hoverBg} ${text}`}>
-            <input
-              type="file"
-              accept="video/*"
-              className="hidden w-full h-full"
-              onChange={handleFileChange}
-            />
-            <span className="text-gray-400">
-              Click to upload or drag a video file here
-            </span>
+    <div className="w-full mx-auto" 
+      style={{ maxWidth,
+              minHeight: "350px",
+              maxHeight: "700px", 
+    }}>
+      <div className="relative w-full" style={{ paddingBottom: "56.25%", minHeight: "350px",
+              maxHeight: "700px",  }}>
+        
+        {/* Upload / Drop area */}
+        {!previewUrl && (
+          <div
+            className="absolute inset-0 flex items-center justify-center cursor-pointer z-20"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={() => inputRef.current?.click()}
+          >
+            <div
+              className={`flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-2xl transition text-center ${bg} ${hoverBg} ${text}`}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <span className="text-gray-400">
+                Click to upload or drag a video file here
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Video & Overlay */}
-      {previewUrl && (
-        <div className="relative w-full f-full">
-          <video
-            ref={videoRef}
-            src={previewUrl}
-            controls
-            className="w-full h-auto rounded-2xl object-contain pointer-events-auto"
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onEnded={handlePause}
-          />
+        {/* Video & Overlay */}
+        {previewUrl && (
+          <div className="absolute inset-0 w-full h-full pointer-events-none">
+            <video
+              ref={videoRef}
+              src={previewUrl}
+              autoPlay
+              muted
+              playsInline
+              loop
+              className="absolute inset-0 w-full h-full rounded-2xl object-cover pointer-events-auto"
+              onPlay={startDetection}
+              onPause={stopDetection}
+              onEnded={stopDetection}
+            />
 
-          <div className="absolute inset-0 pointer-events-none">
             <VideoOverlay videoRef={videoRef} detections={detections} />
-          </div>
 
-          {/* Remove Button */}
-          <div className="absolute top-4 right-4 z-50 pointer-events-auto">
-            <ActionButtonGroup
-              buttons={[
-                {
-                  label: "Remove Video",
-                  onClick: handleRemove,
-                  icon: <VideoCameraSlashIcon className="w-5 h-5" />,
-                },
-              ]}
-            />
+            <div className="absolute top-4 right-4 z-50 pointer-events-auto">
+              <ActionButtonGroup
+                buttons={[
+                  {
+                    label: "Remove Video",
+                    onClick: handleRemove,
+                    icon: <VideoCameraSlashIcon className="w-5 h-5" />,
+                  },
+                ]}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
     </div>
-
   );
 }
