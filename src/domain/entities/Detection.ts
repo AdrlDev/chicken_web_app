@@ -1,5 +1,6 @@
 export interface Detection {
   label: string;
   confidence?: number;
-  bbox: number[];
+  bbox: [number, number, number, number];
+  timestampMs: number;
 }

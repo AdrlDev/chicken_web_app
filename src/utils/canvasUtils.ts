@@ -10,7 +10,7 @@
  * @param stroke stroke the rectangle border
  */
 export function roundRect(
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   x: number,
   y: number,
   width: number,

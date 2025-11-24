@@ -1,41 +1,69 @@
 "use client";
-
 import React, { useRef, useEffect } from "react";
 import { Detection } from "@/domain/entities/Detection";
-import { roundRect, hexToRgba, labelColors } from "@/utils/canvasUtils";
+import { drawOverlay, OverlayTrack } from "@/utils/drawOverlay";
+import { matchDetectionsToTracks, Track } from "@/utils/detectionUtils";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   detections: Detection[] | null;
+  maxTrackAgeMs?: number;
+  smoothingFactor?: number;
+  showStats?: boolean;
 }
 
-const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
+const DEFAULT_MAX_AGE = 800;
+const DEFAULT_SMOOTHING = 0.35;
+
+const VideoOverlay: React.FC<Props> = ({
+  videoRef,
+  detections,
+  maxTrackAgeMs = DEFAULT_MAX_AGE,
+  smoothingFactor = DEFAULT_SMOOTHING,
+  showStats = true,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const tracksRef = useRef<Track[]>([]);
+  const detRef = useRef<Detection[] | null>(detections);
+  const videoDimsRef = useRef({
+    width: 0,
+    height: 0,
+    videoWidth: 0,
+    videoHeight: 0,
+  });
 
-  // Resize canvas when video or window changes
+  // Stats refs
+  const statsRef = useRef({
+    drawFps: 0,
+    detectFps: 0,
+    latency: 0,
+    lastDrawTs: performance.now(),
+    lastDetTs: performance.now(),
+  });
+
+  // Keep detections updated
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
+    detRef.current = detections;
+    const now = performance.now();
+    const s = statsRef.current;
 
-    const resizeCanvas = () => {
-      const rect = video.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    };
+    if (detections && detections.length > 0) {
+      // Update detection FPS
+      const deltaDet = now - s.lastDetTs;
+      if (deltaDet > 0) {
+        const currentDetFps = 1000 / deltaDet;
+        s.detectFps = s.detectFps ? 0.9 * s.detectFps + 0.1 * currentDetFps : currentDetFps;
+      }
+      s.lastDetTs = now;
 
-    resizeCanvas();
+      // Compute latency
+      const latencies = detections
+        .map(d => (d.timestampMs ? now - d.timestampMs : undefined))
+        .filter((x): x is number => x !== undefined);
+      if (latencies.length) s.latency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+    }
+  }, [detections]);
 
-    window.addEventListener("resize", resizeCanvas);
-    document.addEventListener("fullscreenchange", resizeCanvas);
-
-    return () => {
-      window.removeEventListener("resize", resizeCanvas);
-      document.removeEventListener("fullscreenchange", resizeCanvas);
-    };
-  }, [videoRef]);
-
-  // Draw bounding boxes when detections change
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -44,61 +72,93 @@ const VideoOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const rect = video.getBoundingClientRect();
-    const videoRatio = video.videoWidth / video.videoHeight;
-    const rectRatio = rect.width / rect.height;
+    const dpr = window.devicePixelRatio || 1;
 
-    let scaleX = rect.width / video.videoWidth;
-    let scaleY = rect.height / video.videoHeight;
-    let offsetX = 0;
-    let offsetY = 0;
+    const resizeCanvas = () => {
+      const rect = video.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (rectRatio > videoRatio) {
-      scaleX = scaleY;
-      offsetX = (rect.width - video.videoWidth * scaleX) / 2;
+      videoDimsRef.current = {
+        width: rect.width,
+        height: rect.height,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+      };
+    };
+
+    // Resize after metadata loads
+    if (video.readyState >= 1) {
+      resizeCanvas();
     } else {
-      scaleY = scaleX;
-      offsetY = (rect.height - video.videoHeight * scaleY) / 2;
+      video.addEventListener("loadedmetadata", resizeCanvas, { once: true });
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    window.addEventListener("resize", resizeCanvas);
+    const ro = new ResizeObserver(resizeCanvas);
+    ro.observe(video);
 
-    detections?.forEach((det) => {
-      if (!det.bbox || det.bbox.length < 4) return;
+    let raf = 0;
 
-      const [x1, y1, x2, y2] = det.bbox;
-      const sx1 = x1 * scaleX + offsetX;
-      const sy1 = y1 * scaleY + offsetY;
-      const sx2 = x2 * scaleX + offsetX;
-      const sy2 = y2 * scaleY + offsetY;
+    const drawLoop = () => {
+      const now = performance.now();
+      const latestDets = detRef.current ?? [];
 
-      const color = labelColors[det.label] || labelColors.default;
-      const confidence = ((det.confidence ?? 0) * 100).toFixed(1) + "%";
-      const label = `${det.label} (${confidence})`;
+      // Update draw FPS (exponential moving average)
+      const s = statsRef.current;
+      const deltaDraw = now - s.lastDrawTs;
+      if (deltaDraw > 0) {
+        const currentFps = 1000 / deltaDraw;
+        s.drawFps = s.drawFps ? 0.9 * s.drawFps + 0.1 * currentFps : currentFps;
+      }
+      s.lastDrawTs = now;
 
-      // Draw bounding box
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      roundRect(ctx, sx1, sy1, sx2 - sx1, sy2 - sy1 , 6, false, true);
+      // Update tracks
+      tracksRef.current = matchDetectionsToTracks(tracksRef.current, latestDets, {
+        iouThreshold: 0.3,
+        smoothing: smoothingFactor,
+        nowMs: now,
+        maxAgeMs: maxTrackAgeMs,
+      });
 
-      // Dynamic font size
-      const boxHeight = sy2 - sy1;
-      const fontSize = Math.max(Math.min(boxHeight / 5, 20), 10); // 10px min, 20px max
-      ctx.font = `bold ${fontSize}px Arial`;
+      // Map tracks to overlay
+      const overlayTracks: OverlayTrack[] = tracksRef.current
+        .filter(t => t.ageMs <= maxTrackAgeMs)
+        .map(t => ({
+          bbox: t.smoothedBbox as [number, number, number, number],
+          label: t.label,
+          confidence: t.confidence,
+        }));
 
-      const textWidth = ctx.measureText(label).width + 8;
-      const textHeight = fontSize + 6;
+      // Draw overlays and stats
+      drawOverlay(
+        ctx,
+        canvas.width,
+        canvas.height,
+        overlayTracks,
+        showStats
+          ? {
+              detectionFps: Math.round(s.detectFps),
+              latency: Math.round(s.latency),
+            }
+          : undefined,
+        videoDimsRef.current
+      );
 
-      // Draw semi-transparent, rounded label background
-      const radius = Math.min(6, textHeight / 2);
-      ctx.fillStyle = hexToRgba(color, 0.7); // 70% opacity
-      roundRect(ctx, sx1, sy1 - textHeight, textWidth, textHeight, radius, true, false);
+      raf = requestAnimationFrame(drawLoop);
+    };
 
-      // Draw text
-      ctx.fillStyle = "#000";
-      ctx.fillText(label, sx1 + 4, sy1 - 4);
-    });
-  }, [detections, videoRef]);
+    raf = requestAnimationFrame(drawLoop);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resizeCanvas);
+      ro.disconnect();
+    };
+  }, [videoRef, smoothingFactor, maxTrackAgeMs, showStats]);
 
   return (
     <canvas

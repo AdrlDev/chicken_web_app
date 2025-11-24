@@ -124,7 +124,7 @@ export default function VideoUploadCard({
                 onPause={stopDetection}
                 onEnded={stopDetection}
               >
-                <source src={previewUrl} />
+                <source src={previewUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             )}
