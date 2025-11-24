@@ -1,14 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-
-export interface DetectionBox {
-  bbox: number[];
-  label: string;
-  confidence?: number;
-}
+import { Detection } from "@/domain/entities/Detection";
 
 interface UseVideoDetectionSocket {
   isDetecting: boolean;
-  result: DetectionBox[];
+  result: Detection[];
   startDetection: () => void;
   stopDetection: () => void;
 }
@@ -18,7 +13,7 @@ export const useVideoDetectionSocket = (
   frameRate: number = 5 // 🧠 adjustable send rate (5fps default)
 ): UseVideoDetectionSocket => {
   const [isDetecting, setIsDetecting] = useState(false);
-  const [result, setResult] = useState<DetectionBox[]>([]);
+  const [result, setResult] = useState<Detection[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const lastSendTime = useRef<number>(0);
   const animationRef = useRef<number | null>(null);

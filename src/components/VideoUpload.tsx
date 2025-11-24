@@ -29,7 +29,15 @@ export const VideoUpload: React.FC = () => {
         videoRef={videoRef}
         previewUrl={previewUrl}
         setPreviewUrl={setPreviewUrl}
-        detections={result.map((r) => ({ ...r, confidence: r.confidence ?? 0 }))}
+        detections={
+          result?.length
+            ? result.map((r) => ({
+                ...r,
+                confidence: r.confidence ?? 0,
+                timestampMs: r.timestampMs ?? performance.now(), // add timestamp
+              }))
+            : [] // empty array if result is null or empty
+        }
         startDetection={startDetection}
         stopDetection={stopDetection}
         onFileSelected={(file) => console.log("Selected file", file)}
