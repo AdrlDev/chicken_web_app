@@ -47,8 +47,7 @@ export function generateColorForLabel(label: string) {
 export function matchDetectionsToTracks(
   tracks: Track[],
   detections: { bbox: [number, number, number, number]; label?: string; confidence?: number }[],
-  opts: { iouThreshold?: number; smoothing?: number; nowMs?: number; maxAgeMs?: number },
-  mapTrackToDisplay?: (track: Track) => [number, number, number, number]
+  opts: { iouThreshold?: number; smoothing?: number; nowMs?: number; maxAgeMs?: number }
 ): Track[] {
   const iouThreshold = opts.iouThreshold ?? 0.3;
   const smoothing = opts.smoothing ?? 0.35;
