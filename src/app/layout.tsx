@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Navbar from "@/components/Navbar";
 import "./globals.css";
 import Background from "@/components/Background";
 import { ThemeProvider } from "@/components/themes/ThemeContext";
-import Footer from "@/components/footer/Footer";
 import { Poppins } from 'next/font/google'
 
 const poppins = Poppins({
@@ -24,12 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${poppins.variable}`}>
         <ThemeProvider>
           <Background>
-            <header className="absolute inset-x-0 top-0 z-50">
-              <Navbar />
-            </header>
             <main className="relative z-10">{children}</main>
           </Background>
-          <Footer />
         </ThemeProvider>
       </body>
     </html>

@@ -1,18 +1,22 @@
 "use client";
-import LandingPage from "@/components/LandingPage";
-import Navbar from "@/components/Navbar";
+import LoginForm from "@/components/LoginForm";
 import { motion } from "framer-motion";
-import Footer from "@/components/footer/Footer";
+import { useTheme } from "@/components/themes/ThemeContext";
 
-export default function HomePage() {
+export default function LoginPage() {
+    const handleLogin = (token: string) => {
+        // Save JWT token in localStorage or cookies
+        localStorage.setItem("token", token);
+        console.log("Logged in with token:", token);
+    };
+
+    const { theme } = useTheme();
 
   return (
     <>
-    <header className="absolute inset-x-0 top-0 z-50">
-      <Navbar />
-    </header>
-    <LandingPage />
-    <Footer />
+    <div className={`min-h-screen flex items-center justify-center ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}>
+      <LoginForm onLoginSuccess={handleLogin} />
+    </div>
     {/* Background subtle animation circles */}
       <motion.div
         className="absolute top-0 left-1/2 w-[500px] h-[500px] -translate-x-1/2 rounded-full bg-indigo-500 opacity-10 blur-3xl pointer-events-none"

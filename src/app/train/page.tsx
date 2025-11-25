@@ -10,6 +10,8 @@ import ImagePreviewGrid from "@/components/upload/ImagePreview"; // use typed ve
 import UploadTrainButtons from "@/components/upload/UploadTrainButtons";
 import TrainingLogs from "@/components/upload/TrainingLogs";
 import TrainingProgress from "@/components/upload/TrainingProgress";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/footer/Footer";
 
 const labels = [
   "healthy",
@@ -56,67 +58,73 @@ export default function UploadPage() {
     : 0;
 
   return (
-    <TrainLayout title="Dataset Uploader" icon={<CogIcon className="w-6 h-6" />}>
-      <LabelDropdown
-        labels={labels}
-        selectedLabel={selectedLabel}
-        onChange={setSelectedLabel}
-      />
-
-      {/* Drag & Drop Upload */}
-      <DragDropUpload
-        uploading={uploading}
-        onFilesAdded={handleFilesAdded}
-        label="Drag & drop images here, or browse to upload"
-      />
-
-      {/* Image Preview Grid */}
-      {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
-        <ImagePreviewGrid
-          uploadStatuses={uploadStatuses}
-          selectedFiles={selectedFiles}
+    <>
+      <header className="absolute inset-x-0 top-0 z-50">
+        <Navbar />
+      </header>
+      <TrainLayout title="Dataset Uploader" icon={<CogIcon className="w-6 h-6" />}>
+        <LabelDropdown
+          labels={labels}
           selectedLabel={selectedLabel}
-          reuploadFile={reuploadFile}
+          onChange={setSelectedLabel}
         />
-      )}
 
-      {/* Overall Progress */}
-      {uploading && (
-        <div className="mt-4">
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className="bg-green-500 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${overallProgress}%` }}
-            />
+        {/* Drag & Drop Upload */}
+        <DragDropUpload
+          uploading={uploading}
+          onFilesAdded={handleFilesAdded}
+          label="Drag & drop images here, or browse to upload"
+        />
+
+        {/* Image Preview Grid */}
+        {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
+          <ImagePreviewGrid
+            uploadStatuses={uploadStatuses}
+            selectedFiles={selectedFiles}
+            selectedLabel={selectedLabel}
+            reuploadFile={reuploadFile}
+          />
+        )}
+
+        {/* Overall Progress */}
+        {uploading && (
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-green-500 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${overallProgress}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Overall Progress: {Math.round(overallProgress)}%
+            </p>
           </div>
-          <p className="text-sm text-gray-600 mt-2">
-            Overall Progress: {Math.round(overallProgress)}%
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* Upload / Train Buttons */}
-      <UploadTrainButtons
-        uploading={uploading}
-        selectedFilesCount={selectedFiles.length}
-        hasCompletedUploads={uploadStatuses.some(s => s.status === "completed")}
-        onUpload={handleUpload}
-        onTrain={handleTrainModel}
-      />
+        {/* Upload / Train Buttons */}
+        <UploadTrainButtons
+          uploading={uploading}
+          selectedFilesCount={selectedFiles.length}
+          hasCompletedUploads={uploadStatuses.some(s => s.status === "completed")}
+          onUpload={handleUpload}
+          onTrain={handleTrainModel}
+        />
 
-      {/* Help Text */}
-      <p className="mt-4 text-center text-sm text-gray-500">
-        {selectedLabel
-          ? `Images will be labeled as "${selectedLabel}"`
-          : "Images will be automatically labeled using AI detection"
-        }
-      </p>
+        {/* Help Text */}
+        <p className="mt-4 text-center text-sm text-gray-500">
+          {selectedLabel
+            ? `Images will be labeled as "${selectedLabel}"`
+            : "Images will be automatically labeled using AI detection"
+          }
+        </p>
 
-      {/* Training Logs */}
-      {trainLogs.length > 0 && <TrainingLogs logs={trainLogs} />}
+        {/* Training Logs */}
+        {trainLogs.length > 0 && <TrainingLogs logs={trainLogs} />}
 
-      {/* Training Progress */}
-      {trainProgress > 0 && <TrainingProgress progress={trainProgress} />}
-    </TrainLayout>
+        {/* Training Progress */}
+        {trainProgress > 0 && <TrainingProgress progress={trainProgress} />}
+      </TrainLayout>
+      <Footer />
+    </>
   );
 }
