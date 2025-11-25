@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Detection } from "@/domain/entities/Detection";
+import { VideoResult } from "@/domain/entities/VideoResult";
 
 interface UseVideoDetectionSocket {
   isDetecting: boolean;
@@ -86,16 +87,12 @@ export const useVideoDetectionSocket = (
 
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-          setResult(data);
-        } else if (Array.isArray(data.boxes)) {
-          const detections = data.boxes.map((bbox: number[], i: number) => ({
-            bbox,
-            label: data.labels?.[i] ?? "unknown",
-            confidence: data.confidences?.[i] ?? 0,
-          }));
-          setResult(detections);
+        const data: VideoResult = JSON.parse(event.data);
+
+        const detections = data.detections;
+
+        if (detections && Array.isArray(detections)) {
+          setResult(detections); // store the detections
         } else {
           console.warn("⚠️ Unexpected data format", data);
         }
