@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/loginHooks/useAuth';
 import TrainLayout from "@/components/TrainLayout";
