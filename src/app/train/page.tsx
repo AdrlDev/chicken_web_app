@@ -70,14 +70,16 @@ export default function UploadPage() {
     }
   }, [user, isLoading, router]);
 
-
-  // --- 2. Training Status & Notification Logic ---
+  // ⭐️ FIX: Dedicated useEffect for requesting Notification Permission ONCE
   useEffect(() => {
-    // Request notification permission on initial load
     if ('Notification' in window) {
         Notification.requestPermission();
     }
-    
+  }, []); // Empty dependency array ensures this runs only on mount
+
+
+  // --- 2. Training Status & Notification Logic ---
+  useEffect(() => {
     const finishLog = trainLogs.find(log => 
         log.includes("✅ Training finished") || 
         log.includes("❌ Training failed")
