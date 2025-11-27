@@ -47,7 +47,7 @@ export default function Navbar() {
       logout();
       setDropdownOpen(false);
       // Redirect to home or login page after logout
-      router.push('/'); 
+      router.push('/login'); 
   }
 
   const renderNavButtons = (isMobile = false) =>

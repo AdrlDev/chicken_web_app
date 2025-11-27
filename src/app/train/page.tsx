@@ -1,17 +1,20 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from 'next/navigation'; // <-- Import useRouter
+import { useAuth } from '@/hooks/loginHooks/useAuth';    // <-- Import useAuth
 import TrainLayout from "@/components/TrainLayout";
 import { useTrainUploader } from "@/hooks/useTrainUploader";
 import LabelDropdown from "@/components/dropdown/LabelDropdown";
 import DragDropUpload from "@/components/upload/DragDropUpload";
 import { CogIcon } from "@heroicons/react/24/solid";
-import ImagePreviewGrid from "@/components/upload/ImagePreview"; // use typed version
+import ImagePreviewGrid from "@/components/upload/ImagePreview";
 import UploadTrainButtons from "@/components/upload/UploadTrainButtons";
 import TrainingLogs from "@/components/upload/TrainingLogs";
 import TrainingProgress from "@/components/upload/TrainingProgress";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer/Footer";
+import LoadingSpinner from "@/components/LoadingSpinner"; // <-- Import the spinner
 
 const labels = [
   "healthy",
@@ -24,10 +27,31 @@ const labels = [
 ];
 
 export default function UploadPage() {
+  const { user, isLoading } = useAuth(); // <-- Get user and loading state
+  const router = useRouter();             // <-- Initialize router
+  
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
-  const { uploading, uploadStatuses, uploadImages, reuploadFile, trainModel, trainLogs, trainProgress } = useTrainUploader();
+  const { 
+    uploading, 
+    uploadStatuses, 
+    uploadImages, 
+    reuploadFile, 
+    trainModel, 
+    trainLogs, 
+    trainProgress 
+  } = useTrainUploader();
+  
   const logContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Authentication Check and Redirection ---
+  useEffect(() => {
+    // If loading is false AND there is no user, redirect to login.
+    if (!isLoading && user === null) {
+      router.push('/login'); 
+    }
+  }, [user, isLoading, router]);
+
 
   // Auto-scroll logs
   useEffect(() => {
@@ -56,7 +80,22 @@ export default function UploadPage() {
   const overallProgress = uploadStatuses.length > 0
     ? uploadStatuses.reduce((sum, status) => sum + status.progress, 0) / uploadStatuses.length
     : 0;
+    
+  // --- Loading State Check ---
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-900">
+        <LoadingSpinner size={80} color1="blue-500" color2="cyan-400" />
+      </div>
+    );
+  }
 
+  // --- Access Denied/Redirecting State ---
+  if (user === null && !isLoading) {
+    return null; // Block rendering if redirect is active
+  }
+
+  // --- Authorized User Content ---
   return (
     <>
       <header className="absolute inset-x-0 top-0 z-50">
@@ -119,7 +158,13 @@ export default function UploadPage() {
         </p>
 
         {/* Training Logs */}
-        {trainLogs.length > 0 && <TrainingLogs logs={trainLogs} />}
+        {trainLogs.length > 0 && (
+            <TrainingLogs 
+                logs={trainLogs} 
+                // ADD THIS PROP BACK:
+                logContainerRef={logContainerRef} 
+            />
+        )}
 
         {/* Training Progress */}
         {trainProgress > 0 && <TrainingProgress progress={trainProgress} />}

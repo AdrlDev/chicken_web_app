@@ -1,17 +1,56 @@
 "use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/loginHooks/useAuth';
 import { useCamera } from "@/hooks/useCamera";
 import { useDetectionSocket } from "@/hooks/useDetectionSocket";
 import Navbar from "@/components/Navbar";
 import CameraView from "@/components/CameraView";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { motion } from "framer-motion";
 import Footer from "@/components/footer/Footer";
 
 export default function CameraPage() {
-  const { videoRef, startCamera, stopCamera, isActive, error } = useCamera();
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  // isActive and stopCamera are used inside useEffect (in the cleanup)
+  const { videoRef, startCamera, stopCamera, isActive, error } = useCamera(); 
   const { detections } = useDetectionSocket(videoRef);
 
-  console.log(detections)
+  // --- Authentication Check and Redirection ---
+  useEffect(() => {
+    // 1. Authentication Check
+    if (!isLoading && user === null) {
+      router.push('/login'); 
+    }
+    
+    // 2. Cleanup function to stop camera
+    // ESLint requires 'isActive' and 'stopCamera' to be included here
+    return () => {
+        if (isActive) {
+            stopCamera();
+        }
+    }
+  }, [user, isLoading, router, isActive, stopCamera]); // <-- Dependencies are now exhaustive
+
+  // --- Loading State Check ---
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-900">
+        <LoadingSpinner size={80} color1="blue-500" color2="cyan-400" />
+      </div>
+    );
+  }
+
+  // --- Access Denied/Redirecting State ---
+  if (user === null && !isLoading) {
+    return null; 
+  }
+
+  // --- Authorized User Content ---
+  console.log(detections);
 
   return (
     <>
@@ -38,6 +77,5 @@ export default function CameraPage() {
         transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
       />
     </>
-    
   );
 }
