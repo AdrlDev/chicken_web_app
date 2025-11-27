@@ -2,15 +2,73 @@
 
 import React, { useRef, useEffect } from "react";
 import { Detection } from "@/domain/entities/Detection";
-import { roundRect, hexToRgba, labelColors } from "@/utils/canvasUtils";
+import { drawOverlay, OverlayTrack } from "@/utils/drawOverlay";
+import { matchDetectionsToTracks, Track } from "@/utils/detectionUtils";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  detections: Detection[];
+  detections: Detection[] | null;
+  maxTrackAgeMs?: number;
+  smoothingFactor?: number;
+  showStats?: boolean;
 }
 
-const LiveDetectionOverlay: React.FC<Props> = ({ videoRef, detections }) => {
+const DEFAULT_MAX_AGE = 800;
+const DEFAULT_SMOOTHING = 0.35;
+
+const LiveCameraOverlay: React.FC<Props> = ({
+  videoRef,
+  detections,
+  maxTrackAgeMs = DEFAULT_MAX_AGE,
+  smoothingFactor = DEFAULT_SMOOTHING,
+  showStats = true,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const tracksRef = useRef<Track[]>([]);
+  const detRef = useRef<Detection[] | null>(detections);
+
+  console.log(detections)
+
+  const videoDimsRef = useRef({
+    width: 0,
+    height: 0,
+    videoWidth: 0,
+    videoHeight: 0,
+  });
+
+  const statsRef = useRef({
+    drawFps: 0,
+    detectFps: 0,
+    latency: 0,
+    lastDrawTs: performance.now(),
+    lastDetTs: performance.now(),
+  });
+
+  // Sync latest detections
+  useEffect(() => {
+    detRef.current = detections;
+    const now = performance.now();
+    const s = statsRef.current;
+
+    if (detections && detections.length > 0) {
+      // detection FPS
+      const delta = now - s.lastDetTs;
+      if (delta > 0) {
+        const fps = 1000 / delta;
+        s.detectFps = s.detectFps ? 0.9 * s.detectFps + 0.1 * fps : fps;
+      }
+      s.lastDetTs = now;
+
+      // latency
+      const lat = detections
+        .map(d => (d.timestampMs ? now - d.timestampMs : undefined))
+        .filter((x): x is number => x !== undefined);
+
+      if (lat.length) {
+        s.latency = lat.reduce((a, b) => a + b, 0) / lat.length;
+      }
+    }
+  }, [detections]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,68 +78,96 @@ const LiveDetectionOverlay: React.FC<Props> = ({ videoRef, detections }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const draw = () => {
-      if (!video || !ctx) return;
+    const dpr = window.devicePixelRatio || 1;
 
-      // Set canvas size to match video display size
-      canvas.width = video.clientWidth;
-      canvas.height = video.clientHeight;
+    const resizeCanvas = () => {
+      const rect = video.getBoundingClientRect();
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const scaleX = canvas.width / video.videoWidth;
-      const scaleY = canvas.height / video.videoHeight;
+      videoDimsRef.current = {
+        width: rect.width,
+        height: rect.height,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+      };
+    };
 
-      detections.forEach((det) => {
-        if (!det.bbox || det.bbox.length < 4) return;
-        const [x1, y1, x2, y2] = det.bbox;
+    if (video.readyState >= 1) resizeCanvas();
+    else video.addEventListener("loadedmetadata", resizeCanvas, { once: true });
 
-        const sx1 = x1 * scaleX;
-        const sy1 = y1 * scaleY;
-        const sx2 = x2 * scaleX;
-        const sy2 = y2 * scaleY;
+    window.addEventListener("resize", resizeCanvas);
+    const ro = new ResizeObserver(resizeCanvas);
+    ro.observe(video);
 
-        const width = sx2 - sx1;
-        const height = sy2 - sy1;
+    let raf = 0;
 
-        const color = labelColors[det.label] || labelColors.default;
-        const confidence = ((det.confidence ?? 0) * 100).toFixed(1) + "%";
-        const label = `${det.label} (${confidence})`;
+    const drawLoop = () => {
+      const now = performance.now();
+      const latest = detRef.current ?? [];
+      const s = statsRef.current;
 
-        // Rounded bounding box
-        ctx.strokeStyle = hexToRgba(color, 1);
-        ctx.lineWidth = 2;
-        roundRect(ctx, sx1, sy1, width, height, 6, false, true);
+      // draw FPS (smooth)
+      const delta = now - s.lastDrawTs;
+      if (delta > 0) {
+        const fps = 1000 / delta;
+        s.drawFps = s.drawFps ? 0.9 * s.drawFps + 0.1 * fps : fps;
+      }
+      s.lastDrawTs = now;
 
-        // Label background
-        ctx.font = "bold 14px Arial";
-        const textWidth = ctx.measureText(label).width + 8;
-        const textHeight = 18;
-        ctx.fillStyle = hexToRgba(color, 0.7);
-        roundRect(ctx, sx1, sy1 - textHeight, textWidth, textHeight, 4, true, false);
-
-        // Label text
-        ctx.fillStyle = "#000";
-        ctx.fillText(label, sx1 + 4, sy1 - 4);
+      // update object tracking
+      tracksRef.current = matchDetectionsToTracks(tracksRef.current, latest, {
+        iouThreshold: 0.3,
+        smoothing: smoothingFactor,
+        nowMs: now,
+        maxAgeMs: maxTrackAgeMs,
       });
 
-      requestAnimationFrame(draw);
+      const overlayTracks: OverlayTrack[] = tracksRef.current
+        .filter(t => t.ageMs <= maxTrackAgeMs)
+        .map(t => ({
+          bbox: t.smoothedBbox as [number, number, number, number],
+          label: t.label,
+          confidence: t.confidence,
+        }));
+
+      // draw overlay
+      drawOverlay(
+        ctx,
+        canvas.width,
+        canvas.height,
+        overlayTracks,
+        showStats
+          ? {
+              detectionFps: Math.round(s.detectFps),
+              latency: Math.round(s.latency),
+            }
+          : undefined,
+        videoDimsRef.current
+      );
+
+      raf = requestAnimationFrame(drawLoop);
     };
 
-    draw();
+    raf = requestAnimationFrame(drawLoop);
 
     return () => {
-      // Cleanup: cancel animation loop
-      cancelAnimationFrame(draw as unknown as number);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resizeCanvas);
+      ro.disconnect();
     };
-  }, [detections, videoRef]);
+  }, [videoRef, smoothingFactor, maxTrackAgeMs, showStats]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full pointer-events-none"
+      className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"
     />
   );
 };
 
-export default LiveDetectionOverlay;
+export default LiveCameraOverlay;

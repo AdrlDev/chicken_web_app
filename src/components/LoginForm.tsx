@@ -3,50 +3,48 @@
 
 import { useState } from "react";
 import { useTheme } from "@/components/themes/ThemeContext";
+import { useAuth } from "@/hooks/loginHooks/useAuth"; // <-- Import your custom hook
+import { useRouter } from "next/navigation"; // <-- Import router for redirection
 
-interface LoginFormProps {
-  onLoginSuccess?: (token: string) => void;
-}
 
-export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
+export default function LoginForm() { // Removed props
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { login, error: authError, isLoading: authLoading } = useAuth(); // Use state from useAuth
+  const [localError, setLocalError] = useState("");
+  const [localLoading, setLocalLoading] = useState(false);
+  
   const { theme } = useTheme();
+  const router = useRouter();
+
   const textColor = theme === "dark" ? "text-gray-100" : "text-gray-900";
   const formColor = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
+  
+  // Combine loading states
+  const loading = authLoading || localLoading;
+  const error = authError || localError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setLocalLoading(true);
+    setLocalError("");
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      // 1. Call the login function from useAuth
+      const success = await login(email, password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Login failed");
-        setLoading(false);
-        return;
+      if (success) {
+        // 2. Redirect to dashboard immediately on success
+        router.push("/");
+      } else {
+        // The error is already set in the useAuth hook (authError)
+        setLocalError(authError || "Login failed due to unknown error.");
       }
-
-      if (onLoginSuccess) onLoginSuccess(data.token);
-
-      setLoading(false);
-      setEmail("");
-      setPassword("");
-      alert("Login successful!");
     } catch (err) {
       console.error(err);
-      setError("Something went wrong");
-      setLoading(false);
+      setLocalError("Something went wrong with the network.");
+    } finally {
+      setLocalLoading(false);
     }
   };
 

@@ -45,42 +45,44 @@ export default function CameraView({
         {/* Video Card */}
         <div
           className={`w-full md:w-4/5 lg:w-3/4 ${cardBg} border rounded-2xl shadow-xl overflow-hidden relative`}
-          style={{ aspectRatio: "16 / 9", maxWidth: "1200px" }}
+          style={{ maxWidth: "1200px" }}
         >
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}
-            style={{ transform: "scaleX(-1)" }}
-          />
+          <div className="relative h-[300px] sm:h-[350px] md:h-auto md:aspect-video">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}
+              style={{ transform: "scaleX(-1)" }}
+            />
 
-          {!isActive && (
-            <div className={`absolute inset-0 flex flex-col items-center justify-center ${textColor} bg-gradient-to-b from-transparent to-black/20`}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-20 h-20 mb-3 opacity-80"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 10.5L19.5 6.75m0 0L23.25 10.5M19.5 6.75v10.5M4.5 6.75h9.75a2.25 2.25 0 012.25 2.25v6.75a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V9a2.25 2.25 0 012.25-2.25z"
-                />
-              </svg>
-              <p className="text-xl font-medium">Camera is Off</p>
-            </div>
-          )}
+            {!isActive && (
+              <div className={`absolute inset-0 flex flex-col items-center justify-center ${textColor} bg-gradient-to-b from-transparent to-black/20`}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-20 h-20 mb-3 opacity-80"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 10.5L19.5 6.75m0 0L23.25 10.5M19.5 6.75v10.5M4.5 6.75h9.75a2.25 2.25 0 012.25 2.25v6.75a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V9a2.25 2.25 0 012.25-2.25z"
+                  />
+                </svg>
+                <p className="text-xl font-medium">Camera is Off</p>
+              </div>
+            )}
 
-          {isActive && (
-            <div className="absolute inset-0 pointer-events-none">
-              <DetectionOverlay videoRef={videoRef} detections={detections} />
-            </div>
-          )}
+            {isActive && (
+              <div className="absolute inset-0 pointer-events-none">
+                <DetectionOverlay videoRef={videoRef} detections={detections} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Buttons */}
