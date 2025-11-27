@@ -11,6 +11,8 @@ interface UploadTrainButtonsProps {
   hasCompletedUploads: boolean;
   onUpload: () => void;
   onTrain: () => void;
+  // FIX: Add the missing prop here
+  isTrainingActive: boolean;
 }
 
 export default function UploadTrainButtons({
@@ -19,6 +21,8 @@ export default function UploadTrainButtons({
   hasCompletedUploads,
   onUpload,
   onTrain,
+  // FIX: Destructure the new prop
+  isTrainingActive
 }: UploadTrainButtonsProps) {
   const { theme } = useTheme();
 
@@ -31,17 +35,17 @@ export default function UploadTrainButtons({
             ? "Select Files"
             : `Upload ${selectedFilesCount} File${selectedFilesCount > 1 ? "s" : ""}`,
       onClick: onUpload,
-      isEnable: !uploading && selectedFilesCount > 0, // 👈 Disable if no files
+      isEnable: !uploading && selectedFilesCount > 0 && !isTrainingActive, // 👈 Disable if no files
       theme,
       icon: <PhotoIcon className="w-5 h-5" />,
     },
   ];
 
-  if (hasCompletedUploads) {
+  if (hasCompletedUploads || isTrainingActive) {
     buttons.push({
-      label: "Train Model",
+      label: isTrainingActive ? "Training..." : "Train Model",
       onClick: onTrain,
-      isEnable: true,
+      isEnable: hasCompletedUploads && !isTrainingActive,
       theme,
       icon: <CogIcon className="w-5 h-5" />,
     });

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, Dispatch, SetStateAction } from "react";
 import axios from "axios";
 
 export interface UploadStatus {
@@ -31,7 +31,10 @@ interface ProcessingStatusResponse {
   error?: string;
 }
 
-export function useTrainUploader() {
+// Define the type for the optional setter function
+type SetTrainingActive = Dispatch<SetStateAction<boolean>> | undefined;
+
+export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   const [uploading, setUploading] = useState(false);
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
   const [trainLogs, setTrainLogs] = useState<string[]>([]);
@@ -222,6 +225,81 @@ export function useTrainUploader() {
     };
     step();
   };
+
+  // ------------------------
+  // WebSocket Handlers (Internal)
+  // ------------------------
+  const handleWsMessage = useCallback((e: MessageEvent) => {
+    let data;
+    try {
+      data = JSON.parse(e.data);
+    } catch {
+      // Non-JSON message, treat as log
+      setTrainLogs(prev => [...prev, e.data]);
+      return;
+    }
+
+    if (data.event === "batch_end" && data.progress !== undefined) {
+      animateProgress(data.progress);
+      setTrainLogs(prev => [...prev, `Epoch ${data.epoch}, Batch ${data.batch}/${data.total_batches}, Loss: ${data.loss}`]);
+    } else if (data.event === "epoch_end") {
+      // Update progress using the epoch count
+      animateProgress(Math.round((data.epoch / data.total_epochs) * 100));
+      setTrainLogs(prev => [...prev, `Epoch ${data.epoch}/${data.total_epochs}`]);
+    } else if (data.event === "model_saved") {
+      setTrainLogs(prev => [...prev, "💾 Model saved"]);
+    } else if (data.event === "status_check" && data.status !== undefined) {
+      // HANDLE INITIAL STATUS CHECK FROM BACKEND (for re-mounting)
+      if (setIsTrainingActive) {
+        const isActive = data.status === "running";
+        setIsTrainingActive(isActive);
+
+        if (isActive) {
+           setTrainLogs(prev => [...prev, `ℹ️ Training session found on server. Reconnecting logs.`]);
+        }
+      }
+      // If the backend sent progress, update it
+      if (data.progress !== undefined) {
+        animateProgress(data.progress);
+      }
+    }
+  }, [setIsTrainingActive]); // Dependency added
+
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+    
+    // Attempt to close any lingering connection first
+    if (wsRef.current) wsRef.current.close(); 
+    
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+        setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
+        // FIX 3: Request current status/logs from backend on connect
+        ws.send(JSON.stringify({ event: "request_status" }));
+    };
+    ws.onmessage = handleWsMessage;
+    ws.onclose = (e) => {
+        setTrainLogs(prev => [...prev, `🛑 WS closed (${e.code})`]);
+        if (setIsTrainingActive) setIsTrainingActive(false); // Training likely stopped or server shutdown
+    };
+    ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error (${err})`]);
+  }, [handleWsMessage, setIsTrainingActive]);
+
+  // ------------------------
+  // Reconnect on Mount & Cleanup
+  // ------------------------
+  useEffect(() => {
+    connectWebSocket();
+    
+    // Cleanup on unmount
+    return () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
+  }, [connectWebSocket]);
 
   return {
     uploading,
