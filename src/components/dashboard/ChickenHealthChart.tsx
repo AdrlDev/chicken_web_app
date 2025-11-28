@@ -133,7 +133,7 @@ export default function ChickenHealthChart() {
                 {data.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={labelColors[entry.name] || "#cccccc"} 
+                    fill={labelColors[entry.name.toLowerCase()] || "#cccccc"} 
                     className="outline-none"
                   />
                 ))}
