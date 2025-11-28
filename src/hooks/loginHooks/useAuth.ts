@@ -4,6 +4,7 @@ import axios from 'axios';
 import { UserOut, AuthHook, TokenResponse } from '@/domain/types/auth'; // Adjust path as necessary
 
 // --- Configuration ---
+// const API_BASE_URL: string = '/api';
 const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://aedev.cloud/chickenapi/v1';
 const TOKEN_KEY: string = 'authToken';
 
