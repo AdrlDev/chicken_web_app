@@ -11,7 +11,6 @@ import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 import { useTheme } from "@/components/themes/ThemeContext";
 // 👈 IMPORT THE NECESSARY HOOKS
 import { useScanInsertion } from "@/hooks/chickenScanHooks/useScanInsertion"; 
-import { useAuth } from '@/hooks/loginHooks/useAuth'; // Needed to get the user/farm ID
 
 // Define the shape of a single detection result for clarity
 interface DetectionResult {
@@ -35,10 +34,6 @@ export const VideoUpload: React.FC = () => {
   // Use the theme hook
   const { theme } = useTheme();
 
-  // 👈 Use the auth hook to get the user ID (assuming user.id is the farm_id)
-  const { user } = useAuth();
-  const farmId = user?.id; // Assuming user.id holds the farm_id
-
   // 👈 Use the insertion hook
   const { insertScan } = useScanInsertion(); 
 
@@ -49,18 +44,13 @@ export const VideoUpload: React.FC = () => {
   
   // List of diseases you want to save (i.e., not 'Healthy')
   const DISEASES_TO_SAVE = new Set([
-      "Avian Influenza", "Blue Comb", "Coccidiosis", "Coccidiosis Poops",
-      "Fowl Cholera", "Fowl-pox", "Mycotic Infections", "Salmo"
+      "avian influenza", "blue comb", "coccidiosis", "coccidiosis poops",
+      "fowl cholera", "fowl-pox", "mycotic infections", "salmo"
   ]);
 
   // --- 1. Function to handle saving the detection ---
   const handleDetectionResult = useCallback(async (detection: DetectionResult) => {
-    if (!farmId) {
-        console.error("Cannot save scan: Farm ID is missing (user not authenticated).");
-        return;
-    }
-    
-    const diagnosis = detection.label;
+    const diagnosis = detection.label.toLowerCase();
     
     // Create a unique key for this detection event (label + time window)
     const uniqueKey = `${diagnosis}-${Math.floor(detection.timestampMs / 5000)}`; // Group by 5 seconds
@@ -84,17 +74,22 @@ export const VideoUpload: React.FC = () => {
                 newSet.add(uniqueKey);
                 return newSet;
             });
-            // Optional: Show a toast notification here
+            console.log(`SUCCESSFULLY SAVED: ${diagnosis}`);
+        }else {
+            console.error(`FAILED to save scan for ${diagnosis}. Check useScanInsertion hook for API error details.`);
         }
     }
-  }, [farmId, insertScan, savedDetections]);
+  }, [insertScan, savedDetections]);
 
   // --- 2. Effect to monitor new detection results ---
   useEffect(() => {
     // 💡 GUARD: Only process and save results if detection is explicitly active
     if (!isDetectionActive) {
+      console.log("Detection not active")
       return;
     }
+
+    console.log("Detection active")
 
     // Ensure 'result' is an array of detections from the latest frame
     if (result && result.length > 0) {
