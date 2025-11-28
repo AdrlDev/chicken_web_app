@@ -61,7 +61,7 @@ export const VideoUpload: React.FC = () => {
     }
 
     // Only save if it's an actual disease and has high confidence
-    if (DISEASES_TO_SAVE.has(diagnosis) && detection.confidence > 0.7) {
+    if (DISEASES_TO_SAVE.has(diagnosis)) {
         console.log(`Saving diagnosis: ${diagnosis} with confidence ${detection.confidence}`);
         
         const success = await insertScan({
@@ -104,7 +104,7 @@ export const VideoUpload: React.FC = () => {
         // Find the highest confidence non-healthy detection (or the highest healthy one)
         const bestDetection = normalizedResults.reduce((best, current) => {
             // Prioritize diseases over 'Healthy' if confidence is similar
-            if (DISEASES_TO_SAVE.has(current.label) && current.confidence > 0.6) {
+            if (DISEASES_TO_SAVE.has(current.label.toLowerCase()) && current.confidence > 0.5) {
                 return current;
             }
             if (current.confidence > best.confidence) {
@@ -114,7 +114,7 @@ export const VideoUpload: React.FC = () => {
         }, { label: 'Healthy', confidence: 0, timestampMs: performance.now() } as DetectionResult);
 
         // Process the most confident detection
-        if (bestDetection.confidence > 0.7) {
+        if (bestDetection.confidence > 0.4) {
              handleDetectionResult(bestDetection);
         }
     }
