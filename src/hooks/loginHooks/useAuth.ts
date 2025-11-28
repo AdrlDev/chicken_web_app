@@ -15,8 +15,13 @@ const api = axios.create({
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem(TOKEN_KEY);
+  // 💡 FIX: Ensure the header is set only if the token exists, and use standard capitalization
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // CRITICAL: Ensure 'Authorization' is correctly capitalized and the format is 'Bearer <token>'
+    config.headers.Authorization = `Bearer ${token}`; 
+  } else {
+    // 💡 GOOD PRACTICE: Explicitly delete the header if no token is present
+    delete config.headers.Authorization;
   }
   return config;
 });
