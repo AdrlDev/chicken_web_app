@@ -126,6 +126,9 @@ export const VideoUpload: React.FC = () => {
       }))
     : [];
 
+  console.log("Current detections:", detectionsForCard);
+  console.log("Saved detections:", Array.from(savedDetections));
+
   return (
     <div className={`flex flex-col items-center pt-32 px-4 pb-8 md:pb-16 ${textColor}`}>
       <h1 className="text-3xl font-bold mb-6 text-center">
