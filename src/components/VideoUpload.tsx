@@ -28,6 +28,9 @@ export const VideoUpload: React.FC = () => {
   
   // Use the socket hook
   const { result, startDetection, stopDetection } = useVideoDetectionSocket(videoRef);
+
+  // 💡 NEW STATE: Track if detection has been initiated and is running
+  const [isDetectionActive, setIsDetectionActive] = useState(false);
   
   // Use the theme hook
   const { theme } = useTheme();
@@ -88,6 +91,11 @@ export const VideoUpload: React.FC = () => {
 
   // --- 2. Effect to monitor new detection results ---
   useEffect(() => {
+    // 💡 GUARD: Only process and save results if detection is explicitly active
+    if (!isDetectionActive) {
+      return;
+    }
+
     // Ensure 'result' is an array of detections from the latest frame
     if (result && result.length > 0) {
         
@@ -115,7 +123,7 @@ export const VideoUpload: React.FC = () => {
              handleDetectionResult(bestDetection);
         }
     }
-  }, [result, handleDetectionResult, DISEASES_TO_SAVE]);
+  }, [result, handleDetectionResult, DISEASES_TO_SAVE, isDetectionActive]);
 
   // Normalize detections for the VideoUploadCard display
   const detectionsForCard = result?.length
@@ -125,6 +133,19 @@ export const VideoUpload: React.FC = () => {
         timestampMs: r.timestampMs ?? performance.now(),
       }))
     : [];
+
+  // 💡 NEW: Wrapped start/stop functions for state control
+  const handleStartDetection = useCallback(() => {
+    startDetection();
+    setIsDetectionActive(true);
+  }, [startDetection]);
+
+  const handleStopDetection = useCallback(() => {
+    stopDetection();
+    setIsDetectionActive(false);
+    // Clear saved detections when stopping detection
+    setSavedDetections(new Set());
+  }, [stopDetection]);
 
   console.log("Current detections:", detectionsForCard);
   console.log("Saved detections:", Array.from(savedDetections));
@@ -141,8 +162,8 @@ export const VideoUpload: React.FC = () => {
         previewUrl={previewUrl}
         setPreviewUrl={setPreviewUrl}
         detections={detectionsForCard}
-        startDetection={startDetection}
-        stopDetection={stopDetection}
+        startDetection={handleStartDetection}
+        stopDetection={handleStopDetection}
         onFileSelected={(file) => console.log("Selected file", file)}
       />
 
