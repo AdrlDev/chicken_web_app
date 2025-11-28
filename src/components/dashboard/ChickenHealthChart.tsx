@@ -9,15 +9,15 @@ import LoadingSpinner from "@/components/LoadingSpinner"; // 👈 IMPORT SPINNER
 
 // --- Data Configuration (Keep existing) ---
 const labelColors: Record<string, string> = {
-  "Avian Influenza": "#ff9341ff",
-  "Blue Comb": "#00fffbff",
-  "Coccidiosis": "#da4e4eff",
-  "Coccidiosis Poops": "#cc0909ff",
-  "Fowl Cholera": "#f188f3ff",
-  "Fowl-pox": "#ff00bfff",
-  "Mycotic Infections": "#ffdc5eff",
-  "Salmo": "#cd0160ff",
-  "Healthy": "#00FF00",
+  "avian influenza": "#ff9341ff",
+  "blue comb": "#00fffbff",
+  "coccidiosis": "#da4e4eff",
+  "coccidiosis poops": "#cc0909ff",
+  "fowl cholera": "#f188f3ff",
+  "fowl-pox": "#ff00bfff",
+  "mycotic infections": "#ffdc5eff",
+  "salmo": "#cd0160ff",
+  "healthy": "#00FF00",
 };
 
 // 1. Theme-Aware Tooltip
