@@ -111,7 +111,7 @@ export const VideoUpload: React.FC = () => {
                 return current;
             }
             return best;
-        }, { label: 'Healthy', confidence: 0, timestampMs: performance.now() } as DetectionResult);
+        }, { label: 'healthy', confidence: 0, timestampMs: performance.now() } as DetectionResult);
 
         // Process the most confident detection
         if (bestDetection.confidence > 0.4) {
