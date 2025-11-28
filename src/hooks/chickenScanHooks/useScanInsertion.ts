@@ -7,7 +7,6 @@ import { api } from '@/utils/apiClient'; // 👈 Use the token-aware client
 // --- Domain Types (Adjust path as necessary) ---
 interface ScanPayload {
   diagnosis: string;
-  farm_id: number; // Will be sent, but often ignored/overwritten by the backend's auth system
 }
 
 interface ScanResponse {
@@ -35,6 +34,7 @@ export const useScanInsertion = () => {
 
     try {
       // POST request using the authorized 'api' instance
+      // 💡 FIX: The 'payload' sent here now only contains 'diagnosis'.
       const response = await api.post<ScanResponse>('/scans/', payload);
 
       if (response.status !== 201 && response.status !== 200) {

@@ -73,7 +73,6 @@ export const VideoUpload: React.FC = () => {
         
         const success = await insertScan({
             diagnosis: diagnosis,
-            farm_id: farmId,
         });
 
         if (success) {
