@@ -16,7 +16,7 @@ export const useStatCardData = (): StatData => {
             return "0%";
         }
 
-        const healthyEntry = data.find(item => item.name === "Healthy");
+        const healthyEntry = data.find(item => item.name === "healthy");
         
         if (!healthyEntry) {
             // If there are scans but none are "Healthy", the rate is 0%.
