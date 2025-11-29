@@ -115,19 +115,14 @@ export const useVideoDetectionSocket = (
 
     ws.onmessage = (event) => {
       try {
-        // Add a check to ensure we only process messages if we are actively detecting
-        if (!isDetecting) return;
-
         const data: VideoResult = JSON.parse(event.data);
+
         const detections = data.detections;
 
         if (detections && Array.isArray(detections)) {
-          setResult(detections);
+          setResult(detections); // store the detections
         } else {
-          console.warn(
-            "⚠️ Unexpected data format or error message received",
-            data,
-          );
+          console.warn("⚠️ Unexpected data format", data);
         }
       } catch (err) {
         console.error("❌ Invalid detection data", err);
@@ -142,7 +137,7 @@ export const useVideoDetectionSocket = (
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       wsRef.current = null;
 
-      // Ensure auto-reconnect logic does not trigger if stopDetection was called manually (code 1000)
+      // 🔁 Optional: auto-reconnect logic
       if (e.code !== 1000) {
         console.log("♻️ Attempting reconnection...");
         setTimeout(startDetection, 3000);
