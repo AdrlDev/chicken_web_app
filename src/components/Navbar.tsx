@@ -44,7 +44,7 @@ export default function Navbar() {
 
   // Redirect to implemented page or custom 404
   const handleNavClick = (href: string) => {
-    const implementedPages = ["/", "/camera", "/train", "/login"]; // Added /login
+    const implementedPages = ["/", "/scan", "/train", "/login"]; // Added /login
     router.push(implementedPages.includes(href) ? href : "/not-found");
     setMobileMenuOpen(false);
   };
