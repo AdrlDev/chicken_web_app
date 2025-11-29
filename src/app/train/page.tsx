@@ -61,7 +61,6 @@ export default function UploadPage() {
     trainModel,
     trainLogs,
     trainProgress,
-    clearTrainingState,
   } = useTrainUploader(setIsTrainingActive); // <-- PASS SETTER TO HOOK
 
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -71,15 +70,7 @@ export default function UploadPage() {
     if (!isLoading && user === null) {
       router.push("/login");
     }
-
-    // ⭐️ FIX: Clear old training session data when the component mounts.
-    clearTrainingState();
-
-    // Request notification permission once
-    if ("Notification" in window) {
-      Notification.requestPermission();
-    }
-  }, [user, isLoading, router, clearTrainingState]);
+  }, [user, isLoading, router]);
 
   // ⭐️ FIX: Dedicated useEffect for requesting Notification Permission ONCE
   useEffect(() => {
@@ -174,7 +165,8 @@ export default function UploadPage() {
   // --- Determine if the training section should be visible ---
   // Show training section if active, or if logs/progress exist from a previous session
   const isProgressVisible =
-    isTrainingActive || trainLogs.length > 0 || trainProgress > 0;
+    (isTrainingActive && trainLogs.length > 0) ||
+    (isTrainingActive && trainProgress > 0);
 
   // --- Authorized User Content ---
   return (
@@ -268,16 +260,6 @@ export default function UploadPage() {
                 ? "Model Training in Progress..."
                 : "Last Training Session"}
             </h3>
-
-            {/* ⭐️ Add a button to clear logs */}
-            {!isTrainingActive && (
-              <button
-                onClick={clearTrainingState}
-                className="text-sm text-red-500 hover:text-red-600"
-              >
-                Clear Logs
-              </button>
-            )}
 
             {/* Training Progress */}
             {(isTrainingActive || trainProgress > 0) && (
