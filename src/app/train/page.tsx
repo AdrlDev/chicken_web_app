@@ -14,7 +14,7 @@ import {
   CloudArrowUpIcon,
   AcademicCapIcon,
   ClockIcon,
-} from "@heroicons/react/24/solid"; // Added more icons
+} from "@heroicons/react/24/solid";
 import ImagePreviewGrid from "@/components/upload/ImagePreview";
 import UploadTrainButtons from "@/components/upload/UploadTrainButtons";
 import TrainingLogs from "@/components/upload/TrainingLogs";
@@ -22,7 +22,7 @@ import TrainingProgress from "@/components/upload/TrainingProgress";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { motion } from "framer-motion"; // ✨ NEW: Import Framer Motion
+import { motion } from "framer-motion";
 
 const labels = [
   "healthy",
@@ -33,6 +33,24 @@ const labels = [
   "fowl-pox",
   "mycotic infections",
 ];
+
+// Reusable Card Component Style (to mimic ScanPage style)
+const Card = ({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  return (
+    <motion.div
+      className={`p-6 lg:p-8 rounded-2xl bg-white dark:bg-gray-800 shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 h-full ${className}`}
+      variants={itemVariants}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 // Define a function to show the browser notification
 const showNotification = (title: string, body: string) => {
@@ -231,168 +249,198 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Upload/Labeling section only shown if training is NOT active */}
-          {!isTrainingActive && (
-            <motion.div variants={itemVariants}>
-              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center">
+          {/* New Two-Column Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* LEFT CARD: Upload & Labeling (Step 1) */}
+            <div className="lg:col-span-1">
+              <motion.h2
+                className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
                 <CloudArrowUpIcon className="w-5 h-5 mr-2 text-green-500" />
                 Step 1: Upload and Label Data
-              </h2>
+              </motion.h2>
 
-              {/* Label Dropdown */}
-              <motion.div
-                variants={itemVariants}
-                className="mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700"
+              {/* --- UPLOAD CARD CONTAINER --- */}
+              {!isTrainingActive && (
+                <Card>
+                  {/* Label Dropdown */}
+                  <motion.div variants={itemVariants} className="mb-6">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+                      Assign Label for Uploaded Images:
+                    </p>
+                    <LabelDropdown
+                      labels={labels}
+                      selectedLabel={selectedLabel}
+                      onChange={setSelectedLabel}
+                    />
+                  </motion.div>
+
+                  {/* Drag & Drop Upload */}
+                  <motion.div variants={itemVariants}>
+                    <DragDropUpload
+                      uploading={uploading}
+                      onFilesAdded={handleFilesAdded}
+                      label="Drag & drop images here, or browse to upload"
+                    />
+                  </motion.div>
+
+                  {/* Upload Statistics and Progress Bar */}
+                  {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
+                    <motion.div
+                      variants={itemVariants}
+                      className="mt-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-inner"
+                    >
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4">
+                        {/* Total Files Loaded */}
+                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                          <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                            {selectedFiles.length}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Total Files
+                          </p>
+                        </div>
+
+                        {/* Successfully Uploaded */}
+                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                          <p className="text-xl font-bold text-green-600">
+                            {successfullyUploadedCount}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Uploaded
+                          </p>
+                        </div>
+
+                        {/* Pending Uploads */}
+                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                          <p className="text-xl font-bold text-amber-500">
+                            {pendingUploadCount}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Pending
+                          </p>
+                        </div>
+
+                        {/* Failed Uploads */}
+                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                          <p className="text-xl font-bold text-red-600">
+                            {failedUploadCount}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Failed
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Overall Progress for Uploads */}
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 mb-1">
+                          Upload Completion: {Math.round(overallProgress)}%
+                        </p>
+                        <div className="w-full bg-indigo-200 dark:bg-indigo-700 rounded-full h-3">
+                          <motion.div
+                            className="bg-indigo-500 h-3 rounded-full shadow-lg transition-all duration-500"
+                            style={{ width: `${overallProgress}%` }}
+                            initial={{ width: "0%" }}
+                            animate={{ width: `${overallProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Image Preview Grid */}
+                  {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
+                    <motion.div variants={itemVariants} className="mt-6">
+                      <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">
+                        Image Previews ({selectedLabel || "Unlabeled"})
+                      </h3>
+                      <ImagePreviewGrid
+                        uploadStatuses={uploadStatuses}
+                        selectedFiles={selectedFiles}
+                        selectedLabel={selectedLabel}
+                        reuploadFile={reuploadFile}
+                      />
+                    </motion.div>
+                  )}
+                </Card>
+              )}
+            </div>
+
+            {/* RIGHT CARD: Training Status and Logs (Step 2) */}
+            <div className="lg:col-span-1">
+              <motion.h2
+                className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
               >
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-                  Assign Label for Uploaded Images:
-                </p>
-                <LabelDropdown
-                  labels={labels}
-                  selectedLabel={selectedLabel}
-                  onChange={setSelectedLabel}
-                />
-              </motion.div>
+                <AcademicCapIcon className="w-5 h-5 mr-2 text-purple-500" />
+                Step 2: Start Training & Monitor Logs
+              </motion.h2>
 
-              {/* Drag & Drop Upload */}
-              <motion.div variants={itemVariants}>
-                <DragDropUpload
-                  uploading={uploading}
-                  onFilesAdded={handleFilesAdded}
-                  label="Drag & drop images here, or browse to upload"
-                />
-              </motion.div>
-
-              {/* Upload Statistics and Progress Bar */}
-              {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
+              {/* --- LOGS CARD CONTAINER --- */}
+              <Card className="min-h-96">
+                {" "}
+                {/* Added min-height for better visual balance */}
+                {/* Upload / Train Buttons */}
                 <motion.div
                   variants={itemVariants}
-                  className="mt-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-inner"
+                  className="mb-6 pb-6 border-b border-dashed border-gray-300 dark:border-gray-700"
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4">
-                    {/* Total Files Loaded */}
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
-                      <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                        {selectedFiles.length}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Total Files
-                      </p>
-                    </div>
-
-                    {/* Successfully Uploaded */}
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
-                      <p className="text-xl font-bold text-green-600">
-                        {successfullyUploadedCount}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Uploaded
-                      </p>
-                    </div>
-
-                    {/* Pending Uploads ✨ NEW BADGE */}
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
-                      <p className="text-xl font-bold text-amber-500">
-                        {pendingUploadCount}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        **Pending**
-                      </p>
-                    </div>
-
-                    {/* Failed Uploads */}
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
-                      <p className="text-xl font-bold text-red-600">
-                        {failedUploadCount}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Failed
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Overall Progress for Uploads */}
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 mb-1">
-                      Upload Completion: {Math.round(overallProgress)}%
-                    </p>
-                    <div className="w-full bg-indigo-200 dark:bg-indigo-700 rounded-full h-3">
-                      <motion.div
-                        className="bg-indigo-500 h-3 rounded-full shadow-lg transition-all duration-500"
-                        style={{ width: `${overallProgress}%` }}
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${overallProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Image Preview Grid */}
-              {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
-                <motion.div variants={itemVariants} className="mt-6">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">
-                    Image Previews ({selectedLabel || "Unlabeled"})
-                  </h3>
-                  <ImagePreviewGrid
-                    uploadStatuses={uploadStatuses}
-                    selectedFiles={selectedFiles}
-                    selectedLabel={selectedLabel}
-                    reuploadFile={reuploadFile}
+                  <UploadTrainButtons
+                    uploading={uploading}
+                    selectedFilesCount={selectedFiles.length}
+                    hasCompletedUploads={uploadStatuses.some(
+                      (s) => s.status === "completed",
+                    )}
+                    onUpload={handleUpload}
+                    onTrain={handleTrainModel}
+                    isTrainingActive={isTrainingActive}
                   />
                 </motion.div>
-              )}
-            </motion.div>
-          )}
+                {/* Training Status and Logs Section */}
+                {isProgressVisible ? (
+                  <motion.div
+                    variants={itemVariants}
+                    className="p-1" // Reduced padding as Card already has it
+                  >
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+                      <ClockIcon className="w-5 h-5 mr-2 text-blue-500 animate-spin-slow" />
+                      {isTrainingActive
+                        ? "Model Training in Progress..."
+                        : "Last Training Session Report"}
+                    </h3>
 
-          {/* Upload / Train Buttons - Visible regardless of training state */}
-          <motion.div
-            variants={itemVariants}
-            className="mt-8 pt-6 border-t border-dashed border-gray-300 dark:border-gray-700"
-          >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center">
-              <AcademicCapIcon className="w-5 h-5 mr-2 text-purple-500" />
-              Step 2: Start Model Training
-            </h2>
-            <UploadTrainButtons
-              uploading={uploading}
-              selectedFilesCount={selectedFiles.length}
-              hasCompletedUploads={uploadStatuses.some(
-                (s) => s.status === "completed",
-              )}
-              onUpload={handleUpload}
-              onTrain={handleTrainModel}
-              isTrainingActive={isTrainingActive}
-            />
-          </motion.div>
+                    {/* Training Progress */}
+                    {(isTrainingActive || trainProgress > 0) && (
+                      <TrainingProgress progress={trainProgress} />
+                    )}
 
-          {/* Training Status and Logs Section */}
-          {isProgressVisible && (
-            <motion.div
-              variants={itemVariants}
-              className="mt-8 p-6 rounded-xl bg-white dark:bg-gray-800 shadow-2xl border border-blue-400/50 dark:border-blue-600/50"
-            >
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
-                <ClockIcon className="w-5 h-5 mr-2 text-blue-500 animate-spin-slow" />
-                {isTrainingActive
-                  ? "Model Training in Progress..."
-                  : "Last Training Session Report"}
-              </h3>
-
-              {/* Training Progress */}
-              {(isTrainingActive || trainProgress > 0) && (
-                <TrainingProgress progress={trainProgress} />
-              )}
-
-              {/* Training Logs */}
-              {trainLogs.length > 0 && (
-                <TrainingLogs
-                  logs={trainLogs}
-                  logContainerRef={logContainerRef}
-                />
-              )}
-            </motion.div>
-          )}
+                    {/* Training Logs */}
+                    {trainLogs.length > 0 && (
+                      <TrainingLogs
+                        logs={trainLogs}
+                        logContainerRef={logContainerRef}
+                      />
+                    )}
+                  </motion.div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <AcademicCapIcon className="w-16 h-16 mx-auto mb-4 text-purple-400/50" />
+                    <p className="text-lg font-medium">
+                      Start training after uploading images to view real-time
+                      logs and progress here.
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+          {/* End of Two-Column Grid Layout */}
         </motion.div>
       </TrainLayout>
       <Footer />
