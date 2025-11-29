@@ -165,8 +165,7 @@ export default function UploadPage() {
   // --- Determine if the training section should be visible ---
   // Show training section if active, or if logs/progress exist from a previous session
   const isProgressVisible =
-    (isTrainingActive && trainLogs.length > 0) ||
-    (isTrainingActive && trainProgress > 0);
+    isTrainingActive || trainLogs.length > 0 || trainProgress > 0;
 
   // --- Authorized User Content ---
   return (
