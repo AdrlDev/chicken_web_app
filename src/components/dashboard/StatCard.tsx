@@ -11,6 +11,8 @@ interface StatCardProps {
     icon: React.FC<React.SVGProps<SVGSVGElement> & { size?: number }>;
     // Optional prop for the progress bar (used only for Health Rate)
     showProgressBar?: boolean;
+    // ⭐ NEW PROP: Raw percentage value as a number (0-100)
+    progressBarValue?: number;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ 
@@ -18,7 +20,8 @@ const StatCard: React.FC<StatCardProps> = ({
     value, 
     colorClass, 
     icon: Icon, 
-    showProgressBar = false 
+    showProgressBar = false ,
+    progressBarValue
 }) => {
     // Determine background color for the icon ring using string manipulation
     // e.g., 'text-indigo-600' becomes 'bg-indigo-500/20'
@@ -48,12 +51,16 @@ const StatCard: React.FC<StatCardProps> = ({
             </div>
             
             {/* Conditional Progress Bar */}
+            {/* Conditional Progress Bar */}
             {showProgressBar && (
                 <div className={`mt-4 w-full ${theme === "dark" ? "bg-slate-700" : "bg-slate-100"} h-2 rounded-full overflow-hidden`}>
-                    {/* ❗ IMPORTANT: You need to handle the progress bar width logic since 'value' might be a spinner element */}
-                    {/* This logic will only work if 'value' is a string ending in '%', so we must check the type/state. */}
-                    {typeof value === 'string' && value.endsWith('%') && (
-                        <div className={`${progressFillClass} h-full rounded-full`} style={{ width: value }}></div>
+                    {/* Check if the numeric value is provided */}
+                    {typeof progressBarValue === 'number' && (
+                        <div 
+                            className={`${progressFillClass} h-full rounded-full`} 
+                            // Set the width using the dedicated numeric prop
+                            style={{ width: `${progressBarValue}%` }} 
+                        ></div>
                     )}
                 </div>
             )}

@@ -34,6 +34,7 @@ export default function HomePage() {
   const { 
       totalScans, 
       healthRate, 
+      healthRatePercent,
       isStatsLoading 
   } = useStatCardData(); 
 
@@ -123,6 +124,7 @@ export default function HomePage() {
                 colorClass={`${theme === "dark" ? "text-green-400" : "text-green-600"}`}
                 icon={HeartIcon}
                 showProgressBar={true} // Enable progress bar for this card
+                progressBarValue={healthRatePercent}
              />
 
           </motion.div>
