@@ -50,6 +50,8 @@ export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [isTrainingActive, setIsTrainingActive] = useState(false); // <-- NEW STATE
+  // ✨ NEW STATE: Tracks when files have been added but previews are still generating
+  const [isAddingFiles, setIsAddingFiles] = useState(false);
   
   const { 
     uploading, 
@@ -109,7 +111,16 @@ export default function UploadPage() {
 
 
   const handleFilesAdded = (files: File[]) => {
+    // 1. Set loading state to true
+    setIsAddingFiles(true);
+
+    // 2. Add files to state
     setSelectedFiles(prev => [...prev, ...files]);
+    
+    // 3. Use a slight delay to allow the DOM to update and the preview component to start processing
+    setTimeout(() => {
+        setIsAddingFiles(false);
+    }, 50); // A small delay is usually enough to signal the update cycle.
   };
 
   const handleUpload = async () => {
@@ -158,6 +169,18 @@ export default function UploadPage() {
         <Navbar />
       </header>
       <TrainLayout title="Dataset Uploader" icon={<CogIcon className="w-6 h-6" />}>
+        {/* Spinner overlay while files are initially being processed by the browser */}
+        {isAddingFiles && (
+            <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 z-40 flex items-center justify-center rounded-lg">
+                <div className="flex flex-col items-center">
+                    <LoadingSpinner size={40} color1="blue-500" color2="cyan-400" />
+                    <p className="mt-3 text-lg font-medium text-gray-800 dark:text-gray-200">
+                        Preparing {selectedFiles.length} images for preview...
+                    </p>
+                </div>
+            </div>
+        )}
+
         {/* Upload/Labeling section only shown if training is NOT active */}
         {!isTrainingActive && (
           <>
