@@ -287,7 +287,7 @@ export default function UploadPage() {
               {/* --- UPLOAD CARD CONTAINER --- */}
               {!isTrainingActive && (
                 <Card
-                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-white/10" : "bg-gray-50 border-gray-200 ring-gray-900/5"}`}
+                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800" : "bg-gray-50 border-gray-200"}`}
                 >
                   {/* Label Dropdown */}
                   <motion.div variants={itemVariants} className="mb-6">

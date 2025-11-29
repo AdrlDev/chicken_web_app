@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState, useCallback } from 'react'; // Added useState and useCallback
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/loginHooks/useAuth';
+import { useEffect, useState, useCallback } from "react"; // Added useState and useCallback
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/loginHooks/useAuth";
 import { useCamera } from "@/hooks/useCamera";
 import { useDetectionSocket } from "@/hooks/useDetectionSocket";
 import { useScanInsertion } from "@/hooks/chickenScanHooks/useScanInsertion"; // 👈 NEW IMPORT
@@ -15,67 +15,80 @@ import Footer from "@/components/footer/Footer";
 
 // Define the shape for detection results (assuming consistency with other components)
 interface DetectionResult {
-    label: string;
-    confidence: number;
-    timestampMs?: number; 
+  label: string;
+  confidence: number;
+  timestampMs?: number;
 }
 
 // List of labels that should be saved to the database (including 'healthy' for tracking)
 const LABELS_TO_SAVE = new Set([
-    "avian influenza", "blue comb", "coccidiosis", "coccidiosis poops",
-    "fowl cholera", "fowl-pox", "mycotic infections", "salmo", "healthy"
+  "avian influenza",
+  "blue comb",
+  "coccidiosis",
+  "coccidiosis poops",
+  "fowl cholera",
+  "fowl-pox",
+  "mycotic infections",
+  "salmo",
+  "healthy",
 ]);
-
 
 export default function CameraPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
   // Camera and Socket Hooks
-  const { videoRef, startCamera, stopCamera, isActive, error } = useCamera(); 
-  const { detections } = useDetectionSocket(videoRef) as { detections: DetectionResult[] | null };
-  
+  const { videoRef, startCamera, stopCamera, isActive, error } = useCamera();
+  const { detections } = useDetectionSocket(videoRef) as {
+    detections: DetectionResult[] | null;
+  };
+
   // Scan Insertion Hook
   const { insertScan } = useScanInsertion(); // 👈 NEW HOOK
 
   // State to track which detections have already been saved to prevent duplicates
-  const [savedDetections, setSavedDetections] = useState<Set<string>>(new Set());
-  
+  const [savedDetections, setSavedDetections] = useState<Set<string>>(
+    new Set(),
+  );
 
   // --- 1. Function to handle saving the most confident detection ---
-  const handleDetectionResult = useCallback(async (detection: DetectionResult) => {
-    const diagnosis = detection.label.toLowerCase();
-    
-    // Create a unique key for this detection event (label + time window, e.g., 5 seconds)
-    // This is crucial for continuous live streams to prevent saving every frame's detection.
-    const uniqueKey = `${diagnosis}-${Math.floor(Date.now() / 5000)}`; 
-    
-    // Check if we have already saved this detection event
-    if (savedDetections.has(uniqueKey)) {
-        return;
-    }
+  const handleDetectionResult = useCallback(
+    async (detection: DetectionResult) => {
+      const diagnosis = detection.label.toLowerCase();
 
-    // Only save if it's a label we care about and has high confidence
-    if (LABELS_TO_SAVE.has(diagnosis) && detection.confidence > 0.4) {
-        console.log(`[Camera] Saving diagnosis: ${diagnosis} with confidence ${detection.confidence}`);
-        
+      // Create a unique key for this detection event (label + time window, e.g., 5 seconds)
+      // This is crucial for continuous live streams to prevent saving every frame's detection.
+      const uniqueKey = `${diagnosis}-${Math.floor(Date.now() / 5000)}`;
+
+      // Check if we have already saved this detection event
+      if (savedDetections.has(uniqueKey)) {
+        return;
+      }
+
+      // Only save if it's a label we care about and has high confidence
+      if (LABELS_TO_SAVE.has(diagnosis) && detection.confidence > 0.4) {
+        console.log(
+          `[Camera] Saving diagnosis: ${diagnosis} with confidence ${detection.confidence}`,
+        );
+
         const success = await insertScan({
-            diagnosis: diagnosis,
+          diagnosis: diagnosis,
         });
 
         if (success) {
-            setSavedDetections(prev => {
-                const newSet = new Set(prev);
-                newSet.add(uniqueKey);
-                return newSet;
-            });
-            console.log(`[Camera] SUCCESSFULLY SAVED: ${diagnosis}`);
-        }else {
-            console.error(`[Camera] FAILED to save scan for ${diagnosis}.`);
+          setSavedDetections((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(uniqueKey);
+            return newSet;
+          });
+          console.log(`[Camera] SUCCESSFULLY SAVED: ${diagnosis}`);
+        } else {
+          console.error(`[Camera] FAILED to save scan for ${diagnosis}.`);
         }
-    }
-  }, [insertScan, savedDetections]);
-
+      }
+    },
+    [insertScan, savedDetections],
+  );
 
   // --- 2. Effect to monitor new detection results (runs when detections changes) ---
   useEffect(() => {
@@ -85,34 +98,35 @@ export default function CameraPage() {
     }
 
     // Find the single best detection (highest confidence) from the latest frame
-    const bestDetection = detections.reduce((best, current) => {
+    const bestDetection = detections.reduce(
+      (best, current) => {
         if (current.confidence > best.confidence) {
-            return current;
+          return current;
         }
         return best;
-    }, { label: 'healthy', confidence: 0 } as DetectionResult); // Initialize with a dummy low-conf result
+      },
+      { label: "healthy", confidence: 0 } as DetectionResult,
+    ); // Initialize with a dummy low-conf result
 
     // Process the most confident detection
     if (bestDetection.confidence > 0.4) {
-         handleDetectionResult(bestDetection);
+      handleDetectionResult(bestDetection);
     }
-    
   }, [detections, isActive, handleDetectionResult]);
-
 
   // --- Authentication Check and Redirection ---
   useEffect(() => {
     if (!isLoading && user === null) {
-      router.push('/login'); 
+      router.push("/login");
     }
-    
+
     // Cleanup function to stop camera
     return () => {
-        if (isActive) {
-            stopCamera();
-        }
-    }
-  }, [user, isLoading, router, isActive, stopCamera]); 
+      if (isActive) {
+        stopCamera();
+      }
+    };
+  }, [user, isLoading, router, isActive, stopCamera]);
 
   // --- Loading State Check ---
   if (isLoading) {
@@ -125,7 +139,7 @@ export default function CameraPage() {
 
   // --- Access Denied/Redirecting State ---
   if (user === null && !isLoading) {
-    return null; 
+    return null;
   }
 
   // --- Authorized User Content ---
@@ -133,16 +147,13 @@ export default function CameraPage() {
 
   return (
     <>
-      <header className="absolute inset-x-0 top-0 z-50">
-        <Navbar />
-      </header>
       <CameraView
-            videoRef={videoRef}
-            onToggleCamera={isActive ? stopCamera : startCamera}
-            isActive={isActive}
-            error={error}
-            detections={detections as any}
-          />
+        videoRef={videoRef}
+        onToggleCamera={isActive ? stopCamera : startCamera}
+        isActive={isActive}
+        error={error}
+        detections={detections as any}
+      />
       <Footer />
       {/* Background subtle animation circles */}
       <motion.div

@@ -7,6 +7,9 @@ interface UseVideoDetectionSocket {
   result: Detection[];
   startDetection: () => void;
   stopDetection: () => void;
+  // ✨ FIX: Add isConnected and error to the interface
+  isConnected: boolean;
+  error: string | null;
 }
 
 export const useVideoDetectionSocket = (
@@ -15,6 +18,10 @@ export const useVideoDetectionSocket = (
 ): UseVideoDetectionSocket => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [result, setResult] = useState<Detection[]>([]);
+  // ✨ FIX: Add state for connection and error
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const lastSendTime = useRef<number>(0);
   const animationRef = useRef<number | null>(null);
@@ -29,22 +36,20 @@ export const useVideoDetectionSocket = (
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       console.log("🟡 Sending STOP signal to backend...");
 
-      // 1. Send the STOP signal as text data
       try {
-        // Use the signal string that the backend (detection_ws.py) is listening for
         wsRef.current.send("STOP_DETECTION");
       } catch (error) {
         console.error("❌ Failed to send stop signal:", error);
       }
 
-      // 2. Close the connection gracefully (Code 1000 is Normal Closure)
       wsRef.current.close(1000, "Manual stop");
     }
 
     wsRef.current = null;
     setIsDetecting(false);
-    // You might also want to clear the results when detection is fully stopped:
-    // setResult([]);
+    // Setting connection to false will be handled in ws.onclose,
+    // but we can ensure the error is cleared on an intentional stop.
+    setError(null);
   };
   // ----------------------------------------------------
 
@@ -52,10 +57,12 @@ export const useVideoDetectionSocket = (
     const video = videoRef.current;
     if (!video) {
       console.warn("🎥 No video element found");
+      setError("No video element found.");
       return;
     }
 
     stopDetection(); // Close previous connections
+    setError(null); // Clear previous errors on start
 
     const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL}/video-detect`;
     const ws = new WebSocket(wsUrl);
@@ -67,6 +74,9 @@ export const useVideoDetectionSocket = (
     ws.onopen = () => {
       console.log("🟢 Connected to video detection WebSocket");
       setIsDetecting(true);
+      // ✨ FIX: Update isConnected
+      setIsConnected(true);
+      setError(null);
       video.play().catch(() => {});
 
       const sendFrame = () => {
@@ -95,7 +105,6 @@ export const useVideoDetectionSocket = (
               (blob) => {
                 if (blob && ws.readyState === WebSocket.OPEN) {
                   ws.send(blob);
-                  // blob.arrayBuffer().then((buffer) => ws.send(buffer));
                 }
               },
               "image/jpeg",
@@ -130,23 +139,41 @@ export const useVideoDetectionSocket = (
       }
     };
 
-    ws.onerror = (err) => console.error("⚠️ WebSocket error:", err);
+    ws.onerror = (err) => {
+      // ✨ FIX: Update error state
+      console.error("⚠️ WebSocket error:", err);
+      setError("WebSocket connection failed. Check server status.");
+    };
 
     ws.onclose = (e) => {
       console.log(`🔴 WebSocket closed (code ${e.code}):`, e.reason);
       setIsDetecting(false);
+      // ✨ FIX: Update isConnected
+      setIsConnected(false);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       wsRef.current = null;
 
-      // 🔁 Optional: auto-reconnect logic
-      if (e.code !== 1000) {
+      if (e.code !== 1000 && e.code !== 1001) {
+        // 1000=Normal Closure, 1001=Going Away
         console.log("♻️ Attempting reconnection...");
+        setError(
+          `Connection lost (Code ${e.code}). Attempting reconnection...`,
+        );
         setTimeout(startDetection, 3000);
+      } else {
+        setError(null); // Clear error on clean closure
       }
     };
   };
 
   useEffect(() => stopDetection, []);
 
-  return { isDetecting, result, startDetection, stopDetection };
+  return {
+    isDetecting,
+    result,
+    startDetection,
+    stopDetection,
+    isConnected,
+    error,
+  };
 };
