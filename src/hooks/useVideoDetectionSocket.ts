@@ -11,7 +11,7 @@ interface UseVideoDetectionSocket {
 
 export const useVideoDetectionSocket = (
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  frameRate: number = 5 // 🧠 adjustable send rate (5fps default)
+  frameRate: number = 5, // 🧠 adjustable send rate (5fps default)
 ): UseVideoDetectionSocket => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [result, setResult] = useState<Detection[]>([]);
@@ -19,16 +19,34 @@ export const useVideoDetectionSocket = (
   const lastSendTime = useRef<number>(0);
   const animationRef = useRef<number | null>(null);
 
+  // ----------------------------------------------------
+  // ⭐️ FIX: Explicitly send STOP signal before closing
+  // ----------------------------------------------------
   const stopDetection = () => {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     animationRef.current = null;
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log("🟡 Sending STOP signal to backend...");
+
+      // 1. Send the STOP signal as text data
+      try {
+        // Use the signal string that the backend (detection_ws.py) is listening for
+        wsRef.current.send("STOP_DETECTION");
+      } catch (error) {
+        console.error("❌ Failed to send stop signal:", error);
+      }
+
+      // 2. Close the connection gracefully (Code 1000 is Normal Closure)
       wsRef.current.close(1000, "Manual stop");
     }
+
     wsRef.current = null;
     setIsDetecting(false);
+    // You might also want to clear the results when detection is fully stopped:
+    // setResult([]);
   };
+  // ----------------------------------------------------
 
   const startDetection = () => {
     const video = videoRef.current;
@@ -52,7 +70,17 @@ export const useVideoDetectionSocket = (
       video.play().catch(() => {});
 
       const sendFrame = () => {
-        if (!video || ws.readyState !== WebSocket.OPEN) return;
+        const videoElement = videoRef.current;
+        // Ensure video element is available AND not paused/ended
+        if (
+          !videoElement ||
+          videoElement.paused ||
+          videoElement.ended ||
+          ws.readyState !== WebSocket.OPEN
+        ) {
+          animationRef.current = requestAnimationFrame(sendFrame);
+          return;
+        }
 
         const now = performance.now();
         const interval = 1000 / frameRate;
@@ -66,11 +94,11 @@ export const useVideoDetectionSocket = (
             canvas.toBlob(
               (blob) => {
                 if (blob && ws.readyState === WebSocket.OPEN) {
-                  blob.arrayBuffer().then((buffer) => ws.send(buffer));
+                  ws.send(blob);
                 }
               },
               "image/jpeg",
-              0.5
+              0.5,
             );
 
             lastSendTime.current = now;
@@ -87,14 +115,19 @@ export const useVideoDetectionSocket = (
 
     ws.onmessage = (event) => {
       try {
-        const data: VideoResult = JSON.parse(event.data);
+        // Add a check to ensure we only process messages if we are actively detecting
+        if (!isDetecting) return;
 
+        const data: VideoResult = JSON.parse(event.data);
         const detections = data.detections;
 
         if (detections && Array.isArray(detections)) {
-          setResult(detections); // store the detections
+          setResult(detections);
         } else {
-          console.warn("⚠️ Unexpected data format", data);
+          console.warn(
+            "⚠️ Unexpected data format or error message received",
+            data,
+          );
         }
       } catch (err) {
         console.error("❌ Invalid detection data", err);
@@ -109,7 +142,7 @@ export const useVideoDetectionSocket = (
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       wsRef.current = null;
 
-      // 🔁 Optional: auto-reconnect logic
+      // Ensure auto-reconnect logic does not trigger if stopDetection was called manually (code 1000)
       if (e.code !== 1000) {
         console.log("♻️ Attempting reconnection...");
         setTimeout(startDetection, 3000);
