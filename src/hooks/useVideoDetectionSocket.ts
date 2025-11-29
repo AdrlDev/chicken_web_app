@@ -94,7 +94,7 @@ export const useVideoDetectionSocket = (
             canvas.toBlob(
               (blob) => {
                 if (blob && ws.readyState === WebSocket.OPEN) {
-                  ws.send(blob);
+                  blob.arrayBuffer().then((buffer) => ws.send(buffer));
                 }
               },
               "image/jpeg",
