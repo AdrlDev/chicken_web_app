@@ -295,7 +295,7 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   // ------------------------
   const handleWsMessage = useCallback(
     (e: MessageEvent) => {
-      let data;
+      let data: TrainWsMessage; // ⭐️ FIX: Explicitly set the type
       try {
         data = JSON.parse(e.data);
       } catch {
@@ -312,7 +312,9 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
         ]);
       } else if (data.event === "epoch_end") {
         // Update progress using the epoch count
-        animateProgress(Math.round((data.epoch / data.total_epochs) * 100));
+        const epoch = data.epoch ?? 0;
+        const total_epochs = data.total_epochs ?? 1;
+        animateProgress(Math.round((epoch / total_epochs) * 100));
         setTrainLogs((prev) => [
           ...prev,
           `Epoch ${data.epoch}/${data.total_epochs}`,
