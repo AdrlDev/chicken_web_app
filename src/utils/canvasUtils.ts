@@ -61,7 +61,7 @@ export const labelColors: Record<string, string> = {
   "fowl cholera": "#f188f3ff",
   "fowl-pox": "#ff00bfff",
   "mycotic infections": "#ffdc5eff",
-  "salmo": "#cd0160ff",
+  "salmo": "#403A78",
   default: "#00FF00",
 };
 
