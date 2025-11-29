@@ -2,7 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback, useRef, useEffect, Dispatch, SetStateAction } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import axios from "axios";
 
 export interface UploadStatus {
@@ -11,6 +18,18 @@ export interface UploadStatus {
   status: "uploading" | "processing" | "completed" | "error";
   progress: number;
   message?: string;
+}
+
+export interface TrainWsMessage {
+  event: "batch_end" | "epoch_end" | "model_saved" | "status_check" | string;
+  progress?: number;
+  epoch?: number;
+  total_epochs?: number;
+  batch?: number;
+  total_batches?: number;
+  loss?: number;
+  status?: "running" | "stopped";
+  // Add other properties if your backend sends them
 }
 
 interface UploadResponse {
@@ -47,34 +66,38 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   const checkStatus = useCallback(async (fileName: string, taskId: string) => {
     try {
       const response = await axios.get<ProcessingStatusResponse>(
-        `${process.env.NEXT_PUBLIC_API_URL}/auto-label-train/${taskId}`
+        `${process.env.NEXT_PUBLIC_API_URL}/auto-label-train/${taskId}`,
       );
 
-      setUploadStatuses(prev => prev.map(status => {
-        if (status.taskId === taskId) {
-          return {
-            ...status,
-            status: response.data.status as any,
-            message: response.data.result?.message || response.data.error
-          };
-        }
-        return status;
-      }));
+      setUploadStatuses((prev) =>
+        prev.map((status) => {
+          if (status.taskId === taskId) {
+            return {
+              ...status,
+              status: response.data.status as any,
+              message: response.data.result?.message || response.data.error,
+            };
+          }
+          return status;
+        }),
+      );
 
       if (response.data.status === "processing") {
         setTimeout(() => checkStatus(fileName, taskId), 2000);
       }
     } catch (err: any) {
-      setUploadStatuses(prev => prev.map(status => {
-        if (status.taskId === taskId) {
-          return {
-            ...status,
-            status: "error",
-            message: "Failed to check processing status"
-          };
-        }
-        return status;
-      }));
+      setUploadStatuses((prev) =>
+        prev.map((status) => {
+          if (status.taskId === taskId) {
+            return {
+              ...status,
+              status: "error",
+              message: "Failed to check processing status",
+            };
+          }
+          return status;
+        }),
+      );
     }
   }, []);
 
@@ -86,12 +109,14 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
     if (!label) return alert("Please select a label.");
 
     setUploading(true);
-    setUploadStatuses(files.map(file => ({
-      fileName: file.name,
-      taskId: "",
-      status: "uploading",
-      progress: 0
-    })));
+    setUploadStatuses(
+      files.map((file) => ({
+        fileName: file.name,
+        taskId: "",
+        status: "uploading",
+        progress: 0,
+      })),
+    );
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -101,9 +126,11 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
 
       try {
         const updateProgress = (progress: number) => {
-          setUploadStatuses(prev => prev.map((status, idx) =>
-            idx === i ? { ...status, progress } : status
-          ));
+          setUploadStatuses((prev) =>
+            prev.map((status, idx) =>
+              idx === i ? { ...status, progress } : status,
+            ),
+          );
         };
 
         const response = await axios.post<UploadResponse>(
@@ -112,25 +139,38 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
           {
             headers: { "Content-Type": "multipart/form-data" },
             onUploadProgress: (evt) => {
-              if (evt.total) updateProgress(Math.round((evt.loaded / evt.total) * 100));
+              if (evt.total)
+                updateProgress(Math.round((evt.loaded / evt.total) * 100));
             },
-          }
+          },
         );
 
-        setUploadStatuses(prev => prev.map((status, idx) =>
-          idx === i
-            ? { ...status, taskId: response.data.image_id, status: "processing", message: "Processing started" }
-            : status
-        ));
+        setUploadStatuses((prev) =>
+          prev.map((status, idx) =>
+            idx === i
+              ? {
+                  ...status,
+                  taskId: response.data.image_id,
+                  status: "processing",
+                  message: "Processing started",
+                }
+              : status,
+          ),
+        );
 
         checkStatus(file.name, response.data.image_id);
-
       } catch (err: any) {
-        setUploadStatuses(prev => prev.map((status, idx) =>
-          idx === i
-            ? { ...status, status: "error", message: err.response?.data?.detail || "Upload failed" }
-            : status
-        ));
+        setUploadStatuses((prev) =>
+          prev.map((status, idx) =>
+            idx === i
+              ? {
+                  ...status,
+                  status: "error",
+                  message: err.response?.data?.detail || "Upload failed",
+                }
+              : status,
+          ),
+        );
       }
     }
 
@@ -140,13 +180,21 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   // ------------------------
   // Reupload single file
   // ------------------------
-  const reuploadFile = async (fileName: string, label: string, selectedFiles: File[]) => {
-    const fileObj = selectedFiles.find(f => f.name === fileName);
+  const reuploadFile = async (
+    fileName: string,
+    label: string,
+    selectedFiles: File[],
+  ) => {
+    const fileObj = selectedFiles.find((f) => f.name === fileName);
     if (!fileObj) return alert("File object not found");
 
-    setUploadStatuses(prev => prev.map(s =>
-      s.fileName === fileName ? { ...s, status: "uploading", progress: 0, message: "" } : s
-    ));
+    setUploadStatuses((prev) =>
+      prev.map((s) =>
+        s.fileName === fileName
+          ? { ...s, status: "uploading", progress: 0, message: "" }
+          : s,
+      ),
+    );
 
     await uploadImages([fileObj], label);
   };
@@ -157,7 +205,8 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   const trainModel = async () => {
     try {
       // Start training via API
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`)
+      await axios
+        .post(`${process.env.NEXT_PUBLIC_API_URL}/train-model`)
         .catch(() => console.warn("Training API may still be running."));
 
       // Open WS if not already connected
@@ -165,29 +214,44 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
         const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
         wsRef.current = ws;
 
-        ws.onopen = () => setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
+        ws.onopen = () =>
+          setTrainLogs((prev) => [
+            ...prev,
+            "🔗 Connected to Training WebSocket",
+          ]);
         ws.onmessage = (e) => {
-          let data;
+          let data: TrainWsMessage; // ⭐️ FIX: Explicitly set the type
           try {
             data = JSON.parse(e.data);
           } catch {
             // Non-JSON message, treat as log
-            setTrainLogs(prev => [...prev, e.data]);
+            setTrainLogs((prev) => [...prev, e.data]);
             return;
           }
 
           if (data.event === "batch_end" && data.progress !== undefined) {
             animateProgress(data.progress);
-            setTrainLogs(prev => [...prev, `Epoch ${data.epoch}, Batch ${data.batch}/${data.total_batches}, Loss: ${data.loss}`]);
+            setTrainLogs((prev) => [
+              ...prev,
+              `Epoch ${data.epoch}, Batch ${data.batch}/${data.total_batches}, Loss: ${data.loss}`,
+            ]);
           } else if (data.event === "epoch_end") {
-            animateProgress(Math.round((data.epoch / data.total_epochs) * 100));
-            setTrainLogs(prev => [...prev, `Epoch ${data.epoch}/${data.total_epochs}`]);
+            const epoch = data.epoch ?? 0;
+            const total_epochs = data.total_epochs ?? 1;
+
+            animateProgress(Math.round((epoch / total_epochs) * 100));
+            setTrainLogs((prev) => [
+              ...prev,
+              `Epoch ${data.epoch}/${data.total_epochs}`,
+            ]);
           } else if (data.event === "model_saved") {
-            setTrainLogs(prev => [...prev, "💾 Model saved"]);
+            setTrainLogs((prev) => [...prev, "💾 Model saved"]);
           }
-      };
-        ws.onclose = (e) => setTrainLogs(prev => [...prev, `🛑 WS closed (${e.code})`]);
-        ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error (${err})`]);
+        };
+        ws.onclose = (e) =>
+          setTrainLogs((prev) => [...prev, `🛑 WS closed (${e.code})`]);
+        ws.onerror = (err) =>
+          setTrainLogs((prev) => [...prev, `❌ WS error (${err})`]);
       }
 
       return { message: "Training started" };
@@ -210,7 +274,7 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   const progressRef = useRef<number>(0);
 
   const animateProgress = (target: number) => {
-  const step = () => {
+    const step = () => {
       const current = progressRef.current;
       const diff = target - current;
       if (Math.abs(diff) < 0.5) {
@@ -229,62 +293,75 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   // ------------------------
   // WebSocket Handlers (Internal)
   // ------------------------
-  const handleWsMessage = useCallback((e: MessageEvent) => {
-    let data;
-    try {
-      data = JSON.parse(e.data);
-    } catch {
-      // Non-JSON message, treat as log
-      setTrainLogs(prev => [...prev, e.data]);
-      return;
-    }
+  const handleWsMessage = useCallback(
+    (e: MessageEvent) => {
+      let data;
+      try {
+        data = JSON.parse(e.data);
+      } catch {
+        // Non-JSON message, treat as log
+        setTrainLogs((prev) => [...prev, e.data]);
+        return;
+      }
 
-    if (data.event === "batch_end" && data.progress !== undefined) {
-      animateProgress(data.progress);
-      setTrainLogs(prev => [...prev, `Epoch ${data.epoch}, Batch ${data.batch}/${data.total_batches}, Loss: ${data.loss}`]);
-    } else if (data.event === "epoch_end") {
-      // Update progress using the epoch count
-      animateProgress(Math.round((data.epoch / data.total_epochs) * 100));
-      setTrainLogs(prev => [...prev, `Epoch ${data.epoch}/${data.total_epochs}`]);
-    } else if (data.event === "model_saved") {
-      setTrainLogs(prev => [...prev, "💾 Model saved"]);
-    } else if (data.event === "status_check" && data.status !== undefined) {
-      // HANDLE INITIAL STATUS CHECK FROM BACKEND (for re-mounting)
-      if (setIsTrainingActive) {
-        const isActive = data.status === "running";
-        setIsTrainingActive(isActive);
+      if (data.event === "batch_end" && data.progress !== undefined) {
+        animateProgress(data.progress);
+        setTrainLogs((prev) => [
+          ...prev,
+          `Epoch ${data.epoch}, Batch ${data.batch}/${data.total_batches}, Loss: ${data.loss}`,
+        ]);
+      } else if (data.event === "epoch_end") {
+        // Update progress using the epoch count
+        animateProgress(Math.round((data.epoch / data.total_epochs) * 100));
+        setTrainLogs((prev) => [
+          ...prev,
+          `Epoch ${data.epoch}/${data.total_epochs}`,
+        ]);
+      } else if (data.event === "model_saved") {
+        setTrainLogs((prev) => [...prev, "💾 Model saved"]);
+      } else if (data.event === "status_check" && data.status !== undefined) {
+        // HANDLE INITIAL STATUS CHECK FROM BACKEND (for re-mounting)
+        if (setIsTrainingActive) {
+          const isActive = data.status === "running";
+          setIsTrainingActive(isActive);
 
-        if (isActive) {
-           setTrainLogs(prev => [...prev, `ℹ️ Training session found on server. Reconnecting logs.`]);
+          if (isActive) {
+            setTrainLogs((prev) => [
+              ...prev,
+              `ℹ️ Training session found on server. Reconnecting logs.`,
+            ]);
+          }
+        }
+        // If the backend sent progress, update it
+        if (data.progress !== undefined) {
+          animateProgress(data.progress);
         }
       }
-      // If the backend sent progress, update it
-      if (data.progress !== undefined) {
-        animateProgress(data.progress);
-      }
-    }
-  }, [setIsTrainingActive]); // Dependency added
+    },
+    [setIsTrainingActive],
+  ); // Dependency added
 
   const connectWebSocket = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
-    
+
     // Attempt to close any lingering connection first
-    if (wsRef.current) wsRef.current.close(); 
-    
+    if (wsRef.current) wsRef.current.close();
+
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/train`);
     wsRef.current = ws;
 
     ws.onopen = () => {
-        setTrainLogs(prev => [...prev, "🔗 Connected to Training WebSocket"]);
-        // FIX 3: Request current status/logs from backend on connect
-        ws.send(JSON.stringify({ event: "request_status" }));
+      setTrainLogs((prev) => [...prev, "🔗 Connected to Training WebSocket"]);
+      // FIX 3: Request current status/logs from backend on connect
+      ws.send(JSON.stringify({ event: "request_status" }));
     };
     ws.onmessage = handleWsMessage;
     ws.onclose = (e) => {
-        setTrainLogs(prev => [...prev, `🛑 WS closed (${e.code})`]);
-        if (setIsTrainingActive) setIsTrainingActive(false); // Training likely stopped or server shutdown
+      setTrainLogs((prev) => [...prev, `🛑 WS closed (${e.code})`]);
+      if (setIsTrainingActive) setIsTrainingActive(false); // Training likely stopped or server shutdown
     };
-    ws.onerror = (err) => setTrainLogs(prev => [...prev, `❌ WS error (${err})`]);
+    ws.onerror = (err) =>
+      setTrainLogs((prev) => [...prev, `❌ WS error (${err})`]);
   }, [handleWsMessage, setIsTrainingActive]);
 
   // ------------------------
@@ -292,7 +369,7 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   // ------------------------
   useEffect(() => {
     connectWebSocket();
-    
+
     // Cleanup on unmount
     return () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -308,6 +385,6 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
     reuploadFile,
     trainModel,
     trainLogs,
-    trainProgress
+    trainProgress,
   };
 }
