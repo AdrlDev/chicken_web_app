@@ -45,11 +45,17 @@ export default function ImagePreviewGrid({
 }: ImagePreviewGridProps) {
   const { theme } = useTheme();
   const [showAll, setShowAll] = useState(false);
+
+  // NEW STATE to manage the loading status of generating local preview URLs
+  const [isLocalLoading, setIsLocalLoading] = useState(false); 
   const [fileItems, setFileItems] = useState<FileItem[]>([]);
   const [statusItems, setStatusItems] = useState<StatusItem[]>([]);
 
   // Generate object URLs for local files
   useEffect(() => {
+    // 1. Set loading state TRUE immediately
+    setIsLocalLoading(true);
+
     const newItems: FileItem[] = selectedFiles.map((file) => ({
       type: "local",
       file,
@@ -58,19 +64,39 @@ export default function ImagePreviewGrid({
 
     setFileItems(newItems);
 
+    // Use a counter or promise to track when all are loaded
+    let loadedCount = 0;
+    const totalFiles = newItems.length;
+
     newItems.forEach((item, idx) => {
       const url = URL.createObjectURL(item.file);
+
+      // Use requestAnimationFrame for slightly smoother timing, though setTimeout is fine too
+      // The delay simulates actual browser loading time.
       setTimeout(() => {
         setFileItems((prev) => {
           const updated = [...prev];
           updated[idx] = { ...item, url, loading: false };
           return updated;
         });
+
+        loadedCount++;
+        // 2. Set loading state FALSE when all files have generated URLs
+        if (loadedCount === totalFiles) {
+             setIsLocalLoading(false);
+        }
       }, 50);
     });
 
+    // Handle case where selectedFiles is empty (reset loading)
+    if (selectedFiles.length === 0) {
+        setIsLocalLoading(false);
+    }
+
     return () => {
       newItems.forEach((item) => item.url && URL.revokeObjectURL(item.url));
+      // Cleanup for the overall loading state on unmount or dependency change
+      setIsLocalLoading(false);
     };
   }, [selectedFiles]);
 
@@ -95,6 +121,18 @@ export default function ImagePreviewGrid({
 
   const allItems: Item[] = [...fileItems, ...statusItems];
   const itemsToShow = showAll ? allItems : allItems.slice(0, 6);
+
+  // --- NEW: Central Loading Spinner for Preview Generation ---
+  if (isLocalLoading) {
+     return (
+        <div className={`mt-6 flex justify-center items-center h-40 ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"} rounded-lg shadow-inner`}>
+            <div className="flex flex-col items-center">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">Preparing image previews...</p>
+            </div>
+        </div>
+     );
+  }
 
   return (
     <div className="mt-6 relative">
@@ -123,7 +161,7 @@ export default function ImagePreviewGrid({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.3 }}
-                className="relative rounded-lg overflow-hidden shadow-md border border-gray-200 h-40 flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+                className={`relative rounded-lg overflow-hidden shadow-md border border-gray-200 h-40 flex items-center justify-center ${theme === "dark" ? "bg-gray-800" : "bg-gray-100"}`}
               >
                 {/* Image */}
                 {src && (
@@ -139,7 +177,7 @@ export default function ImagePreviewGrid({
 
                 {/* Loading Overlay */}
                 {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-900/70">
+                  <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-gray-900/70" : "bg-white/70"}`}>
                     <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
