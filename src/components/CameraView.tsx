@@ -4,8 +4,9 @@ import React from "react";
 import { Detection } from "@/domain/entities/Detection";
 import DetectionOverlay from "./overlays/DetectionOverlay";
 import { useTheme } from "@/components/themes/ThemeContext";
-import { CameraIcon } from "@heroicons/react/24/solid";
+import { CameraIcon, BackwardIcon } from "@heroicons/react/24/solid";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
+import { useRouter } from "next/navigation";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -23,6 +24,7 @@ export default function CameraView({
   detections,
 }: Props) {
   const { theme } = useTheme();
+  const router = useRouter();
 
   const textColor = theme === "dark" ? "text-gray-300" : "text-gray-900";
   const cardBg =
@@ -91,6 +93,12 @@ export default function CameraView({
         {/* Buttons */}
         <ActionButtonGroup
           buttons={[
+            {
+              label: "Back to Scan Options",
+              onClick: () => router.push("/scan"),
+              icon: <BackwardIcon className="w-5 h-5" />,
+              theme: theme,
+            },
             {
               label: isActive ? "Stop Camera" : "Start Camera",
               onClick: onToggleCamera,
