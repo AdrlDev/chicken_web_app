@@ -32,9 +32,6 @@ const StatCard: React.FC<StatCardProps> = ({
 
     const { theme } = useTheme();
     const cardBg = theme === "dark" ? "bg-slate-900/60 border-white/10 shadow-2xl" : "bg-white/80 border-slate-200 shadow-sm";
-        
-    // Determine progress bar fill color
-    const progressFillClass = colorClass.replace('text-', 'bg-');
 
     return (
         <div className={`backdrop-blur-xl border ${cardBg} rounded-2xl p-6 shadow-sm dark:shadow-xl transition-colors h-full flex flex-col justify-between`}>

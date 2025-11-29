@@ -11,13 +11,7 @@ import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 import { useTheme } from "@/components/themes/ThemeContext";
 // 👈 IMPORT THE NECESSARY HOOKS
 import { useScanInsertion } from "@/hooks/chickenScanHooks/useScanInsertion"; 
-
-// Define the shape of a single detection result for clarity
-interface DetectionResult {
-    label: string;
-    confidence: number;
-    timestampMs: number;
-}
+import { DetectionResult } from "@/utils/detectionUtils";
 
 
 export const VideoUpload: React.FC = () => {

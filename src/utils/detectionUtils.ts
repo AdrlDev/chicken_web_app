@@ -122,3 +122,9 @@ export function matchDetectionsToTracks(
   for (const t of filtered) t.ageMs = nowMs - t.lastSeenMs;
   return filtered;
 }
+
+export interface DetectionResult {
+    label: string;
+    confidence: number;
+    timestampMs: number;
+}
