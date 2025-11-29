@@ -380,6 +380,13 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
     };
   }, [connectWebSocket]);
 
+  const clearTrainingState = () => {
+    setTrainLogs([]);
+    setTrainingProgress(0);
+    // Optionally: close the WS connection if it's open
+    if (wsRef.current) wsRef.current.close();
+  };
+
   return {
     uploading,
     uploadStatuses,
@@ -388,5 +395,6 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
     trainModel,
     trainLogs,
     trainProgress,
+    clearTrainingState,
   };
 }

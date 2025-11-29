@@ -3,8 +3,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/loginHooks/useAuth';
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/loginHooks/useAuth";
 import TrainLayout from "@/components/TrainLayout";
 import { useTrainUploader } from "@/hooks/useTrainUploader";
 import LabelDropdown from "@/components/dropdown/LabelDropdown";
@@ -30,77 +30,90 @@ const labels = [
 
 // Define a function to show the browser notification
 const showNotification = (title: string, body: string) => {
-    // Check if notifications are supported and permitted
-    if ('Notification' in window && Notification.permission === 'granted') {
+  // Check if notifications are supported and permitted
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, { body });
+  } else if ("Notification" in window && Notification.permission !== "denied") {
+    // Request permission if not already granted/denied
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
         new Notification(title, { body });
-    } else if ('Notification' in window && Notification.permission !== 'denied') {
-        // Request permission if not already granted/denied
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                new Notification(title, { body });
-            }
-        });
-    }
+      }
+    });
+  }
 };
 
 export default function UploadPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [isTrainingActive, setIsTrainingActive] = useState(false); // <-- NEW STATE
   // ✨ NEW STATE: Tracks when files have been added but previews are still generating
   const [isAddingFiles, setIsAddingFiles] = useState(false);
-  
-  const { 
-    uploading, 
-    uploadStatuses, 
-    uploadImages, 
-    reuploadFile, 
-    trainModel, 
-    trainLogs, 
-    trainProgress 
+
+  const {
+    uploading,
+    uploadStatuses,
+    uploadImages,
+    reuploadFile,
+    trainModel,
+    trainLogs,
+    trainProgress,
+    clearTrainingState,
   } = useTrainUploader(setIsTrainingActive); // <-- PASS SETTER TO HOOK
-  
+
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   // --- 1. Authentication Check ---
   useEffect(() => {
     if (!isLoading && user === null) {
-      router.push('/login'); 
+      router.push("/login");
     }
-  }, [user, isLoading, router]);
+
+    // ⭐️ FIX: Clear old training session data when the component mounts.
+    clearTrainingState();
+
+    // Request notification permission once
+    if ("Notification" in window) {
+      Notification.requestPermission();
+    }
+  }, [user, isLoading, router, clearTrainingState]);
 
   // ⭐️ FIX: Dedicated useEffect for requesting Notification Permission ONCE
   useEffect(() => {
-    if ('Notification' in window) {
-        Notification.requestPermission();
+    if ("Notification" in window) {
+      Notification.requestPermission();
     }
   }, []); // Empty dependency array ensures this runs only on mount
 
-
   // --- 2. Training Status & Notification Logic ---
   useEffect(() => {
-    const finishLog = trainLogs.find(log => 
-        log.includes("✅ Training finished") || 
-        log.includes("❌ Training failed")
+    const finishLog = trainLogs.find(
+      (log) =>
+        log.includes("✅ Training finished") ||
+        log.includes("❌ Training failed"),
     );
 
     if (finishLog) {
-        // Training is done (success or failure)
-        setIsTrainingActive(false); 
-        
-        if (finishLog.includes("✅ Training finished")) {
-            showNotification("✅ Training Complete", "The model has finished training!");
-        } else {
-             showNotification("❌ Training Failed", "An error occurred during training.");
-        }
-    } 
-    // The logic below for re-mount state stabilization is now handled better inside useTrainUploader
-    
-  }, [trainLogs]); // Dependency array updated to [trainLogs]
+      // Training is done (success or failure)
+      setIsTrainingActive(false);
 
+      if (finishLog.includes("✅ Training finished")) {
+        showNotification(
+          "✅ Training Complete",
+          "The model has finished training!",
+        );
+      } else {
+        showNotification(
+          "❌ Training Failed",
+          "An error occurred during training.",
+        );
+      }
+    }
+    // The logic below for re-mount state stabilization is now handled better inside useTrainUploader
+  }, [trainLogs]); // Dependency array updated to [trainLogs]
 
   // Auto-scroll logs
   useEffect(() => {
@@ -109,17 +122,16 @@ export default function UploadPage() {
     }
   }, [trainLogs]);
 
-
   const handleFilesAdded = (files: File[]) => {
     // 1. Set loading state to true
     setIsAddingFiles(true);
 
     // 2. Add files to state
-    setSelectedFiles(prev => [...prev, ...files]);
-    
+    setSelectedFiles((prev) => [...prev, ...files]);
+
     // 3. Use a slight delay to allow the DOM to update and the preview component to start processing
     setTimeout(() => {
-        setIsAddingFiles(false);
+      setIsAddingFiles(false);
     }, 50); // A small delay is usually enough to signal the update cycle.
   };
 
@@ -130,7 +142,7 @@ export default function UploadPage() {
   const handleTrainModel = async () => {
     try {
       // Set training state immediately
-      setIsTrainingActive(true); 
+      setIsTrainingActive(true);
       const data = await trainModel();
       alert(data.message || "Training started!");
     } catch {
@@ -139,10 +151,12 @@ export default function UploadPage() {
     }
   };
 
-  const overallProgress = uploadStatuses.length > 0
-    ? uploadStatuses.reduce((sum, status) => sum + status.progress, 0) / uploadStatuses.length
-    : 0;
-    
+  const overallProgress =
+    uploadStatuses.length > 0
+      ? uploadStatuses.reduce((sum, status) => sum + status.progress, 0) /
+        uploadStatuses.length
+      : 0;
+
   // --- Loading State Check ---
   if (isLoading) {
     return (
@@ -159,8 +173,9 @@ export default function UploadPage() {
 
   // --- Determine if the training section should be visible ---
   // Show training section if active, or if logs/progress exist from a previous session
-  const isProgressVisible = isTrainingActive || trainLogs.length > 0 || trainProgress > 0; 
-
+  const isProgressVisible =
+    (isTrainingActive && trainLogs.length > 0) ||
+    (isTrainingActive && trainProgress > 0);
 
   // --- Authorized User Content ---
   return (
@@ -168,17 +183,20 @@ export default function UploadPage() {
       <header className="absolute inset-x-0 top-0 z-50">
         <Navbar />
       </header>
-      <TrainLayout title="Dataset Uploader" icon={<CogIcon className="w-6 h-6" />}>
+      <TrainLayout
+        title="Dataset Uploader"
+        icon={<CogIcon className="w-6 h-6" />}
+      >
         {/* Spinner overlay while files are initially being processed by the browser */}
         {isAddingFiles && (
-            <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 z-40 flex items-center justify-center rounded-lg">
-                <div className="flex flex-col items-center">
-                    <LoadingSpinner size={40} color1="blue-500" color2="cyan-400" />
-                    <p className="mt-3 text-lg font-medium text-gray-800 dark:text-gray-200">
-                        Preparing {selectedFiles.length} images for preview...
-                    </p>
-                </div>
+          <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 z-40 flex items-center justify-center rounded-lg">
+            <div className="flex flex-col items-center">
+              <LoadingSpinner size={40} color1="blue-500" color2="cyan-400" />
+              <p className="mt-3 text-lg font-medium text-gray-800 dark:text-gray-200">
+                Preparing {selectedFiles.length} images for preview...
+              </p>
             </div>
+          </div>
         )}
 
         {/* Upload/Labeling section only shown if training is NOT active */}
@@ -221,22 +239,23 @@ export default function UploadPage() {
                 </p>
               </div>
             )}
-            
+
             {/* Help Text */}
             <p className="mt-4 text-center text-sm text-gray-500">
-                {selectedLabel
+              {selectedLabel
                 ? `Images will be labeled as "${selectedLabel}"`
-                : "Images will be automatically labeled using AI detection"
-                }
+                : "Images will be automatically labeled using AI detection"}
             </p>
           </>
         )}
-        
+
         {/* Upload / Train Buttons - Visible regardless of training state */}
         <UploadTrainButtons
           uploading={uploading}
           selectedFilesCount={selectedFiles.length}
-          hasCompletedUploads={uploadStatuses.some(s => s.status === "completed")}
+          hasCompletedUploads={uploadStatuses.some(
+            (s) => s.status === "completed",
+          )}
           onUpload={handleUpload}
           onTrain={handleTrainModel}
           isTrainingActive={isTrainingActive} // <-- PASS NEW PROP
@@ -244,22 +263,36 @@ export default function UploadPage() {
 
         {/* Training Status and Logs Section */}
         {isProgressVisible && (
-            <>
-                <h3 className="mt-8 text-xl font-semibold">
-                    {isTrainingActive ? "Model Training in Progress..." : "Last Training Session"}
-                </h3>
-                
-                {/* Training Progress */}
-                {(isTrainingActive || trainProgress > 0) && <TrainingProgress progress={trainProgress} />}
+          <>
+            <h3 className="mt-8 text-xl font-semibold">
+              {isTrainingActive
+                ? "Model Training in Progress..."
+                : "Last Training Session"}
+            </h3>
 
-                {/* Training Logs */}
-                {trainLogs.length > 0 && (
-                    <TrainingLogs 
-                        logs={trainLogs} 
-                        logContainerRef={logContainerRef} 
-                    />
-                )}
-            </>
+            {/* ⭐️ Add a button to clear logs */}
+            {!isTrainingActive && (
+              <button
+                onClick={clearTrainingState}
+                className="text-sm text-red-500 hover:text-red-600"
+              >
+                Clear Logs
+              </button>
+            )}
+
+            {/* Training Progress */}
+            {(isTrainingActive || trainProgress > 0) && (
+              <TrainingProgress progress={trainProgress} />
+            )}
+
+            {/* Training Logs */}
+            {trainLogs.length > 0 && (
+              <TrainingLogs
+                logs={trainLogs}
+                logContainerRef={logContainerRef}
+              />
+            )}
+          </>
         )}
       </TrainLayout>
       <Footer />
