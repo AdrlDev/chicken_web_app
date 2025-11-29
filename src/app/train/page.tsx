@@ -211,7 +211,9 @@ export default function UploadPage() {
   // --- Loading State Check (Modified for theme consistency) ---
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-950 dark:bg-gray-950">
+      <div
+        className={`flex justify-center items-center min-h-screen ${theme === "dark" ? "bg-gray-950" : "bg-gray-700"}`}
+      >
         <LoadingSpinner size={80} color1="indigo-500" color2="purple-400" />
       </div>
     );
@@ -228,7 +230,9 @@ export default function UploadPage() {
 
   // --- Authorized User Content ---
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div
+      className={`min-h-screen ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"} transition-colors duration-300`}
+    >
       <header className="absolute inset-x-0 top-0 z-50">
         <Navbar />
       </header>
@@ -310,7 +314,7 @@ export default function UploadPage() {
                   {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
                     <motion.div
                       variants={itemVariants}
-                      className="mt-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-inner"
+                      className={`mt-6 p-4 rounded-xl border ${theme === "dark" ? "bg-indigo-900/30 border-indigo-800" : "bg-indigo-50 border-indigo-200"} shadow-inner`}
                     >
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4">
                         {/* Total Files Loaded */}
@@ -366,10 +370,14 @@ export default function UploadPage() {
 
                       {/* Overall Progress for Uploads */}
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 mb-1">
+                        <p
+                          className={`text-sm font-medium ${theme === "dark" ? "text-indigo-300" : "text-indigo-700"} mb-1`}
+                        >
                           Upload Completion: {Math.round(overallProgress)}%
                         </p>
-                        <div className="w-full bg-indigo-200 dark:bg-indigo-700 rounded-full h-3">
+                        <div
+                          className={`w-full ${theme === "dark" ? "bg-indigo-700" : "bg-indigo-200"} rounded-full h-3`}
+                        >
                           <motion.div
                             className="bg-indigo-500 h-3 rounded-full shadow-lg transition-all duration-500"
                             style={{ width: `${overallProgress}%` }}
@@ -462,7 +470,9 @@ export default function UploadPage() {
                     )}
                   </motion.div>
                 ) : (
-                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  <div
+                    className={`text-center py-12 ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}
+                  >
                     <AcademicCapIcon className="w-16 h-16 mx-auto mb-4 text-purple-400/50" />
                     <p className="text-lg font-medium">
                       Start training after uploading images to view real-time
