@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect } from 'react'; // Import useEffect
-import { useRouter } from 'next/navigation'; // Import useRouter
-import { useAuth } from '@/hooks/loginHooks/useAuth'; // Import useAuth
-import UploadComponent from "@/components/UploadPage"; // Assuming this is the component containing the core logic
+import { useEffect } from "react"; // Import useEffect
+import { useRouter } from "next/navigation"; // Import useRouter
+import { useAuth } from "@/hooks/loginHooks/useAuth"; // Import useAuth
+import UploadComponent from "@/components/upload/UploadPage"; // Assuming this is the component containing the core logic
 import LoadingSpinner from "@/components/LoadingSpinner"; // Import the spinner
 import { motion } from "framer-motion";
 
 export default function UploadPageWrapper() {
   const { user, isLoading } = useAuth(); // Get auth state
-  const router = useRouter();             // Initialize router
+  const router = useRouter(); // Initialize router
 
   // --- Authentication Check and Redirection ---
   useEffect(() => {
     // If loading is false AND there is no user, redirect to login.
     if (!isLoading && user === null) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [user, isLoading, router]);
 
@@ -37,8 +37,8 @@ export default function UploadPageWrapper() {
   return (
     <>
       {/* Assuming UploadComponent renders the Navbar, Footer, and main content */}
-      <UploadComponent /> 
-      
+      <UploadComponent />
+
       {/* Background subtle animation circles */}
       <motion.div
         className="absolute top-0 left-1/2 w-[500px] h-[500px] -translate-x-1/2 rounded-full bg-indigo-500 opacity-10 blur-3xl pointer-events-none"

@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect } from 'react'; // <-- Import useEffect
-import { useRouter } from 'next/navigation'; // <-- Import useRouter
-import { useAuth } from '@/hooks/loginHooks/useAuth'; // <-- Import useAuth
-import { VideoUpload } from "@/components/VideoUpload";
+import { useEffect } from "react"; // <-- Import useEffect
+import { useRouter } from "next/navigation"; // <-- Import useRouter
+import { useAuth } from "@/hooks/loginHooks/useAuth"; // <-- Import useAuth
+import { VideoUpload } from "@/components/upload/VideoUpload";
 import LoadingSpinner from "@/components/LoadingSpinner"; // <-- Import the spinner
 import { motion } from "framer-motion";
 
 export default function VideoUploadPage() {
   const { user, isLoading } = useAuth(); // <-- Get user and loading state
-  const router = useRouter();             // <-- Initialize router
+  const router = useRouter(); // <-- Initialize router
 
   // --- Authentication Check and Redirection ---
   useEffect(() => {
     // If loading is false AND there is no user, redirect to login.
     if (!isLoading && user === null) {
-      router.push('/login'); 
+      router.push("/login");
     }
   }, [user, isLoading, router]);
-
 
   // --- Loading State Check ---
   // Show a spinner while checking the authentication status
@@ -33,7 +32,7 @@ export default function VideoUploadPage() {
   // --- Access Denied/Redirecting State ---
   // If loading is finished and user is null, block rendering (redirect has been triggered)
   if (user === null && !isLoading) {
-    return null; 
+    return null;
   }
 
   // --- Authorized User Content ---
