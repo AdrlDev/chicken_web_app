@@ -57,7 +57,7 @@ const StatCard: React.FC<StatCardProps> = ({
                     {/* Check if the numeric value is provided */}
                     {typeof progressBarValue === 'number' && (
                         <div 
-                            className={`${progressFillClass} h-full rounded-full`} 
+                            className={`${theme === "dark" ? "bg-indigo-700" : "bg-indigo-100"} h-full rounded-full`} 
                             // Set the width using the dedicated numeric prop
                             style={{ width: `${progressBarValue}%` }} 
                         ></div>
