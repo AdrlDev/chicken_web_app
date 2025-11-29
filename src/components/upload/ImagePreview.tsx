@@ -51,10 +51,16 @@ export default function ImagePreviewGrid({
   const [fileItems, setFileItems] = useState<FileItem[]>([]);
   const [statusItems, setStatusItems] = useState<StatusItem[]>([]);
 
+  const shouldShowLocalFiles = uploadStatuses.length === 0;
+
   // Generate object URLs for local files
   useEffect(() => {
-    // 1. Set loading state TRUE immediately
-    setIsLocalLoading(true);
+    // Only process local files if they should be shown
+    if (!shouldShowLocalFiles) {
+        setFileItems([]); // Crucial: Clear local files if upload has started
+        setIsLocalLoading(false); // Reset loading state
+        return;
+    }
 
     const newItems: FileItem[] = selectedFiles.map((file) => ({
       type: "local",
@@ -98,7 +104,7 @@ export default function ImagePreviewGrid({
       // Cleanup for the overall loading state on unmount or dependency change
       setIsLocalLoading(false);
     };
-  }, [selectedFiles]);
+  }, [selectedFiles, shouldShowLocalFiles]);
 
   // Track loading for uploaded status images
   useEffect(() => {
@@ -106,6 +112,7 @@ export default function ImagePreviewGrid({
       type: "status",
       status,
       loading: true,
+      // NOTE: Ensure your status.fileName contains a URL if the image has been publicly saved
       url: status.fileName.startsWith("http") ? status.fileName : undefined,
     }));
     setStatusItems(newStatusItems);
@@ -119,6 +126,8 @@ export default function ImagePreviewGrid({
     });
   };
 
+  // --- Final Item Array for Rendering ---
+  // The allItems list now automatically excludes the local files once uploadStatuses has items.
   const allItems: Item[] = [...fileItems, ...statusItems];
   const itemsToShow = showAll ? allItems : allItems.slice(0, 6);
 
