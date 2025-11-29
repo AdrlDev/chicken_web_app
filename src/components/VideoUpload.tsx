@@ -45,7 +45,7 @@ export const VideoUpload: React.FC = () => {
   // List of diseases you want to save (i.e., not 'Healthy')
   const DISEASES_TO_SAVE = new Set([
       "avian influenza", "blue comb", "coccidiosis", "coccidiosis poops",
-      "fowl cholera", "fowl-pox", "mycotic infections", "salmo"
+      "fowl cholera", "fowl-pox", "mycotic infections", "salmo", "healthy"
   ]);
 
   // --- 1. Function to handle saving the detection ---
