@@ -286,7 +286,9 @@ export default function UploadPage() {
 
               {/* --- UPLOAD CARD CONTAINER --- */}
               {!isTrainingActive && (
-                <Card>
+                <Card
+                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800" : "bg-gray-50 border-gray-200"}`}
+                >
                   {/* Label Dropdown */}
                   <motion.div variants={itemVariants} className="mb-6">
                     <p
@@ -422,7 +424,9 @@ export default function UploadPage() {
               </motion.h2>
 
               {/* --- LOGS CARD CONTAINER --- */}
-              <Card className="min-h-96">
+              <Card
+                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800" : "bg-gray-50 border-gray-200"} min-h-96`}
+              >
                 {" "}
                 {/* Added min-height for better visual balance */}
                 {/* Upload / Train Buttons */}
