@@ -66,7 +66,7 @@ const Card = ({
 }) => {
   return (
     <motion.div
-      className={`p-6 lg:p-8 rounded-2xl bg-white dark:bg-gray-800 shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 h-full ${className}`}
+      className={`p-6 lg:p-8 rounded-2xl ${className} shadow-xl ring-1 h-full`}
       variants={itemVariants}
     >
       {children}
@@ -287,7 +287,7 @@ export default function UploadPage() {
               {/* --- UPLOAD CARD CONTAINER --- */}
               {!isTrainingActive && (
                 <Card
-                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800" : "bg-gray-50 border-gray-200"}`}
+                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-white/10" : "bg-gray-50 border-gray-200 ring-gray-900/5"}`}
                 >
                   {/* Label Dropdown */}
                   <motion.div variants={itemVariants} className="mb-6">
