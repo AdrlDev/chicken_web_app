@@ -1,22 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
+//DetectionCard.tsx (FIXED)
 "use client";
 
-import React, { ReactNode } from "react"; // ✨ NEW: Import ReactNode for placeholder
+import React, { ReactNode } from "react";
 import { useTheme } from "@/components/themes/ThemeContext";
 import ImageDetectionOverlay from "@/components/overlays/ImageDetectionOverlay";
 import { Detection } from "@/domain/entities/Detection";
-import LoadingSpinner from "../LoadingSpinner"; // Assuming you have this component
+import LoadingSpinner from "../LoadingSpinner";
 import { motion } from "framer-motion";
 
 interface Props {
   imageSrc: string | null;
   imageRef: React.RefObject<HTMLImageElement | null>;
   detections: Detection[];
-  aspectRatio?: string; // default 16/9
-  maxWidth?: string; // default 1200px
-  // ✨ FIX: Add placeholder to Props
+  aspectRatio?: string;
+  maxWidth?: string;
   placeholder: ReactNode;
-  // ✨ FIX: Add isProcessing to Props
   isProcessing: boolean;
 }
 
@@ -26,12 +25,11 @@ export default function DetectionCard({
   detections,
   aspectRatio = "16 / 9",
   maxWidth = "1200px",
-  placeholder, // Destructure the new prop
-  isProcessing = false, // Destructure the new prop
+  placeholder,
+  isProcessing = false,
 }: Props) {
   const { theme } = useTheme();
 
-  // Updated card style for the "Scan Page" aesthetic
   const cardStyle =
     theme === "dark"
       ? "bg-gray-900 ring-1 ring-indigo-500/50 shadow-2xl shadow-indigo-900/40"
@@ -41,7 +39,8 @@ export default function DetectionCard({
 
   return (
     <div
-      className={`w-full md:w-4/5 lg:w-3/4 ${cardStyle} rounded-2xl overflow-hidden relative flex items-center justify-center transition-all duration-500`}
+      // ✨ FIX: Remove md:w-4/5 lg:w-3/4 from here. Keep only w-full.
+      className={`w-full ${cardStyle} rounded-2xl overflow-hidden relative flex items-center justify-center transition-all duration-500`}
       style={{ aspectRatio, maxWidth }}
     >
       {/* --- Image Display --- */}

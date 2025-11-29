@@ -66,7 +66,7 @@ const Card = ({
 }) => {
   return (
     <motion.div
-      className={`p-6 lg:p-8 rounded-2xl ${className} shadow-xl ring-1 h-full`}
+      className={`p-6 lg:p-8 rounded-2xl ${className} h-full`}
       variants={itemVariants}
     >
       {children}
@@ -287,7 +287,7 @@ export default function UploadPage() {
               {/* --- UPLOAD CARD CONTAINER --- */}
               {!isTrainingActive && (
                 <Card
-                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800" : "bg-gray-50 border-gray-200"}`}
+                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-500/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"}`}
                 >
                   {/* Label Dropdown */}
                   <motion.div variants={itemVariants} className="mb-6">
@@ -425,7 +425,7 @@ export default function UploadPage() {
 
               {/* --- LOGS CARD CONTAINER --- */}
               <Card
-                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800" : "bg-gray-50 border-gray-200"} min-h-96`}
+                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-500/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"} min-h-96`}
               >
                 {" "}
                 {/* Added min-height for better visual balance */}

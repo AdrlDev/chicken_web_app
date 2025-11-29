@@ -75,7 +75,6 @@ export default function UploadPage() {
       : "bg-gray-100 border border-gray-300";
 
   const [isScanSaved, setIsScanSaved] = useState(false);
-  const [isImageSent, setIsImageSent] = useState(false); // New state to track if image was sent
 
   // --- 1. Function to handle saving the most confident detection ---
   const handleScanInsertion = useCallback(
@@ -122,7 +121,6 @@ export default function UploadPage() {
 
     // Reset state for a new image upload
     setIsScanSaved(false);
-    setIsImageSent(true); // Set to true immediately upon file selection
 
     const reader = new FileReader();
     reader.onload = () => {
