@@ -23,6 +23,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { motion } from "framer-motion";
+import { useTheme } from "@/components/themes/ThemeContext"; // ✨ NEW: Import useTheme
 
 const labels = [
   "healthy",
@@ -34,7 +35,28 @@ const labels = [
   "mycotic infections",
 ];
 
-// Reusable Card Component Style (to mimic ScanPage style)
+// Framer Motion Variants (kept outside for memoization)
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      when: "beforeChildren",
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+};
+
+// Reusable Card Component Style (Now uses a theme context if available via props)
+// NOTE: Since the Card component is defined within the file and uses itemVariants,
+// we assume it will inherit theme styling from the UploadPage where it is rendered.
 const Card = ({
   children,
   className = "",
@@ -67,33 +89,23 @@ const showNotification = (title: string, body: string) => {
   }
 };
 
-// Framer Motion Variants
-const containerVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      when: "beforeChildren",
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
-
 export default function UploadPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme(); // ✨ NEW: Get the current theme
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [isTrainingActive, setIsTrainingActive] = useState(false);
   const [isAddingFiles, setIsAddingFiles] = useState(false);
+
+  // Theme-aware color definition for dynamic styles
+  const overlayBg = theme === "dark" ? "bg-gray-900/70" : "bg-white/70";
+  const overlayCardBg = theme === "dark" ? "bg-gray-800" : "bg-white";
+  const primaryTextColor = theme === "dark" ? "text-gray-100" : "text-gray-800";
+  const secondaryTextColor =
+    theme === "dark" ? "text-gray-400" : "text-gray-500";
+  const borderColor = theme === "dark" ? "border-gray-700" : "border-gray-300";
 
   const {
     uploading,
@@ -107,21 +119,21 @@ export default function UploadPage() {
 
   const logContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- 1. Authentication Check ---
+  // --- 1. Authentication Check (Omitted for brevity, unchanged) ---
   useEffect(() => {
     if (!isLoading && user === null) {
       router.push("/login");
     }
   }, [user, isLoading, router]);
 
-  // ⭐️ FIX: Dedicated useEffect for requesting Notification Permission ONCE
+  // ⭐️ FIX: Dedicated useEffect for requesting Notification Permission ONCE (Omitted for brevity, unchanged) ---
   useEffect(() => {
     if ("Notification" in window) {
       Notification.requestPermission();
     }
   }, []);
 
-  // --- 2. Training Status & Notification Logic ---
+  // --- 2. Training Status & Notification Logic (Omitted for brevity, unchanged) ---
   useEffect(() => {
     const finishLog = trainLogs.find(
       (log) =>
@@ -147,13 +159,14 @@ export default function UploadPage() {
     }
   }, [trainLogs]);
 
-  // Auto-scroll logs
+  // Auto-scroll logs (Omitted for brevity, unchanged) ---
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [trainLogs]);
 
+  // Handlers (Omitted for brevity, unchanged) ---
   const handleFilesAdded = (files: File[]) => {
     // 1. Set loading state to true
     setIsAddingFiles(true);
@@ -180,7 +193,7 @@ export default function UploadPage() {
     }
   };
 
-  // --- Overall Progress Calculation & Upload Stats ---
+  // --- Overall Progress Calculation & Upload Stats (Omitted for brevity, unchanged) ---
   const successfullyUploadedCount = uploadStatuses.filter(
     (s) => s.status === "completed",
   ).length;
@@ -195,21 +208,21 @@ export default function UploadPage() {
         uploadStatuses.length
       : 0;
 
-  // --- Loading State Check ---
+  // --- Loading State Check (Modified for theme consistency) ---
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-900">
+      <div className="flex justify-center items-center min-h-screen bg-gray-950 dark:bg-gray-950">
         <LoadingSpinner size={80} color1="indigo-500" color2="purple-400" />
       </div>
     );
   }
 
-  // --- Access Denied/Redirecting State ---
+  // --- Access Denied/Redirecting State (Omitted for brevity, unchanged) ---
   if (user === null && !isLoading) {
     return null;
   }
 
-  // --- Determine if the training section should be visible ---
+  // --- Determine if the training section should be visible (Omitted for brevity, unchanged) ---
   const isProgressVisible =
     isTrainingActive || trainLogs.length > 0 || trainProgress > 0;
 
@@ -232,17 +245,21 @@ export default function UploadPage() {
         >
           {/* Spinner overlay while files are initially being processed by the browser */}
           {isAddingFiles && (
-            <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 z-40 flex items-center justify-center rounded-xl backdrop-blur-sm transition-opacity duration-300">
-              <div className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
+            <div
+              className={`absolute inset-0 ${overlayBg} z-40 flex items-center justify-center rounded-xl backdrop-blur-sm transition-opacity duration-300`}
+            >
+              <div
+                className={`flex flex-col items-center p-6 ${overlayCardBg} rounded-xl shadow-2xl`}
+              >
                 <LoadingSpinner
                   size={50}
                   color1="indigo-500"
                   color2="purple-400"
                 />
-                <p className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
+                <p className={`mt-4 text-xl font-semibold ${primaryTextColor}`}>
                   Preparing Images...
                 </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <p className={`mt-1 text-sm ${secondaryTextColor}`}>
                   Processing {selectedFiles.length} files for preview.
                 </p>
               </div>
@@ -254,7 +271,7 @@ export default function UploadPage() {
             {/* LEFT CARD: Upload & Labeling (Step 1) */}
             <div className="lg:col-span-1">
               <motion.h2
-                className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center"
+                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -268,7 +285,9 @@ export default function UploadPage() {
                 <Card>
                   {/* Label Dropdown */}
                   <motion.div variants={itemVariants} className="mb-6">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+                    <p
+                      className={`text-sm font-medium ${secondaryTextColor} mb-2`}
+                    >
                       Assign Label for Uploaded Images:
                     </p>
                     <LabelDropdown
@@ -295,41 +314,51 @@ export default function UploadPage() {
                     >
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4">
                         {/* Total Files Loaded */}
-                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
-                          <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                        <div
+                          className={`p-2 rounded-lg ${overlayCardBg} shadow-sm`}
+                        >
+                          <p
+                            className={`text-xl font-bold ${primaryTextColor}`}
+                          >
                             {selectedFiles.length}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className={`text-xs ${secondaryTextColor}`}>
                             Total Files
                           </p>
                         </div>
 
                         {/* Successfully Uploaded */}
-                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                        <div
+                          className={`p-2 rounded-lg ${overlayCardBg} shadow-sm`}
+                        >
                           <p className="text-xl font-bold text-green-600">
                             {successfullyUploadedCount}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className={`text-xs ${secondaryTextColor}`}>
                             Uploaded
                           </p>
                         </div>
 
                         {/* Pending Uploads */}
-                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                        <div
+                          className={`p-2 rounded-lg ${overlayCardBg} shadow-sm`}
+                        >
                           <p className="text-xl font-bold text-amber-500">
                             {pendingUploadCount}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className={`text-xs ${secondaryTextColor}`}>
                             Pending
                           </p>
                         </div>
 
                         {/* Failed Uploads */}
-                        <div className="p-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
+                        <div
+                          className={`p-2 rounded-lg ${overlayCardBg} shadow-sm`}
+                        >
                           <p className="text-xl font-bold text-red-600">
                             {failedUploadCount}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className={`text-xs ${secondaryTextColor}`}>
                             Failed
                           </p>
                         </div>
@@ -355,7 +384,9 @@ export default function UploadPage() {
                   {/* Image Preview Grid */}
                   {(uploadStatuses.length > 0 || selectedFiles.length > 0) && (
                     <motion.div variants={itemVariants} className="mt-6">
-                      <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">
+                      <h3
+                        className={`text-lg font-semibold mb-3 ${primaryTextColor}`}
+                      >
                         Image Previews ({selectedLabel || "Unlabeled"})
                       </h3>
                       <ImagePreviewGrid
@@ -373,7 +404,7 @@ export default function UploadPage() {
             {/* RIGHT CARD: Training Status and Logs (Step 2) */}
             <div className="lg:col-span-1">
               <motion.h2
-                className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center"
+                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -389,7 +420,7 @@ export default function UploadPage() {
                 {/* Upload / Train Buttons */}
                 <motion.div
                   variants={itemVariants}
-                  className="mb-6 pb-6 border-b border-dashed border-gray-300 dark:border-gray-700"
+                  className={`mb-6 pb-6 border-b border-dashed ${borderColor}`}
                 >
                   <UploadTrainButtons
                     uploading={uploading}
@@ -408,7 +439,9 @@ export default function UploadPage() {
                     variants={itemVariants}
                     className="p-1" // Reduced padding as Card already has it
                   >
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+                    <h3
+                      className={`text-xl font-bold ${primaryTextColor} mb-4 flex items-center`}
+                    >
                       <ClockIcon className="w-5 h-5 mr-2 text-blue-500 animate-spin-slow" />
                       {isTrainingActive
                         ? "Model Training in Progress..."
