@@ -27,13 +27,28 @@ const LiveCameraOverlay: React.FC<Props> = ({
   const tracksRef = useRef<Track[]>([]);
   const detRef = useRef<Detection[] | null>(detections);
 
-  console.log(detections)
+  console.log(detections);
 
-  const videoDimsRef = useRef({
+  // ⭐️ MODIFIED: Added scale and offset properties to the ref type
+  const videoDimsRef = useRef<{
+    width: number;
+    height: number;
+    videoWidth: number;
+    videoHeight: number;
+    scaleX: number; // Added
+    scaleY: number; // Added
+    offsetX: number; // Added
+    offsetY: number; // Added
+  }>({
     width: 0,
     height: 0,
     videoWidth: 0,
     videoHeight: 0,
+    // ⭐️ REQUIRED: Initialize with placeholder values
+    scaleX: 0,
+    scaleY: 0,
+    offsetX: 0,
+    offsetY: 0,
   });
 
   const statsRef = useRef({
@@ -59,13 +74,29 @@ const LiveCameraOverlay: React.FC<Props> = ({
       }
       s.lastDetTs = now;
 
-      // latency
-      const lat = detections
-        .map(d => (d.timestampMs ? now - d.timestampMs : undefined))
+      // 🛑 LATENCY FIX/WORKAROUND: Only compute if timestampMs is positive/sane.
+      // This helps avoid the massive negative latency displayed in the video.
+      const latencies = detections
+        .map((d) => {
+          // Check if timestamp is a reasonable, recent Unix timestamp (e.g., within 24 hours of now)
+          if (
+            d.timestampMs &&
+            d.timestampMs > now - 86400000 &&
+            d.timestampMs < now + 1000
+          ) {
+            return now - d.timestampMs;
+          }
+          return undefined;
+        })
         .filter((x): x is number => x !== undefined);
 
-      if (lat.length) {
-        s.latency = lat.reduce((a, b) => a + b, 0) / lat.length;
+      if (latencies.length) {
+        // Use an exponential moving average for latency for smoother display
+        const avgLatency =
+          latencies.reduce((a, b) => a + b, 0) / latencies.length;
+        s.latency = s.latency ? 0.9 * s.latency + 0.1 * avgLatency : avgLatency;
+      } else {
+        s.latency = -1; // Indicate invalid/missing latency
       }
     }
   }, [detections]);
@@ -82,6 +113,10 @@ const LiveCameraOverlay: React.FC<Props> = ({
 
     const resizeCanvas = () => {
       const rect = video.getBoundingClientRect();
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+
+      if (vw === 0 || vh === 0) return; // Skip if video metadata hasn't loaded properly
 
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
@@ -89,11 +124,36 @@ const LiveCameraOverlay: React.FC<Props> = ({
       canvas.style.height = `${rect.height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      // --- ⭐️ CORE SCALING FIX: Aspect Ratio Calculation for object-fit: cover ---
+      const videoAspectRatio = vw / vh;
+      const elementAspectRatio = rect.width / rect.height;
+
+      let scale: number;
+      let offsetX: number;
+      let offsetY: number;
+
+      // We assume object-fit: cover due to the bounding box issues observed.
+      if (videoAspectRatio > elementAspectRatio) {
+        // Video is wider than element: fit height, clip width.
+        scale = rect.height / vh;
+        offsetX = (rect.width - vw * scale) / 2;
+        offsetY = 0;
+      } else {
+        // Video is taller than element: fit width, clip height.
+        scale = rect.width / vw;
+        offsetX = 0;
+        offsetY = (rect.height - vh * scale) / 2;
+      }
+
       videoDimsRef.current = {
         width: rect.width,
         height: rect.height,
-        videoWidth: video.videoWidth,
-        videoHeight: video.videoHeight,
+        videoWidth: vw,
+        videoHeight: vh,
+        scaleX: scale, // Pass calculated scale
+        scaleY: scale, // Pass calculated scale
+        offsetX: offsetX, // Pass calculated offset
+        offsetY: offsetY, // Pass calculated offset
       };
     };
 
@@ -128,8 +188,8 @@ const LiveCameraOverlay: React.FC<Props> = ({
       });
 
       const overlayTracks: OverlayTrack[] = tracksRef.current
-        .filter(t => t.ageMs <= maxTrackAgeMs)
-        .map(t => ({
+        .filter((t) => t.ageMs <= maxTrackAgeMs)
+        .map((t) => ({
           bbox: t.smoothedBbox as [number, number, number, number],
           label: t.label,
           confidence: t.confidence,
@@ -147,7 +207,7 @@ const LiveCameraOverlay: React.FC<Props> = ({
               latency: Math.round(s.latency),
             }
           : undefined,
-        videoDimsRef.current
+        videoDimsRef.current,
       );
 
       raf = requestAnimationFrame(drawLoop);
