@@ -3,9 +3,8 @@
 import React from "react";
 import { Detection } from "@/domain/entities/Detection";
 import DetectionOverlay from "./overlays/DetectionOverlay";
-import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/themes/ThemeContext";
-import { CameraIcon, PhotoIcon, VideoCameraIcon } from "@heroicons/react/24/solid";
+import { CameraIcon } from "@heroicons/react/24/solid";
 import ActionButtonGroup from "@/components/bottons/ActionButtonGroup";
 
 interface Props {
@@ -23,11 +22,13 @@ export default function CameraView({
   error,
   detections,
 }: Props) {
-  const router = useRouter();
   const { theme } = useTheme();
 
   const textColor = theme === "dark" ? "text-gray-300" : "text-gray-900";
-  const cardBg = theme === "dark" ? "bg-gray-800/60 border-gray-700" : "bg-white/80 border-gray-200";
+  const cardBg =
+    theme === "dark"
+      ? "bg-gray-800/60 border-gray-700"
+      : "bg-white/80 border-gray-200";
 
   return (
     <>
@@ -58,7 +59,9 @@ export default function CameraView({
             />
 
             {!isActive && (
-              <div className={`absolute inset-0 flex flex-col items-center justify-center ${textColor} bg-gradient-to-b from-transparent to-black/20`}>
+              <div
+                className={`absolute inset-0 flex flex-col items-center justify-center ${textColor} bg-gradient-to-b from-transparent to-black/20`}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -95,22 +98,16 @@ export default function CameraView({
               isActive: isActive,
               theme: theme,
             },
-            {
-              label: "Upload Image",
-              onClick: () => router.push("/upload"),
-              icon: <PhotoIcon className="w-5 h-5" />,
-              theme: theme,
-            },
-            {
-              label: "Upload Video",
-              onClick: () => router.push("/video"),
-              icon: <VideoCameraIcon className="w-5 h-5" />,
-              theme: theme,
-            },
           ]}
         />
 
-        {error && <p className={`mt-4 text-center ${theme === "dark" ? "text-red-400" : "text-red-600"}`}>{error}</p>}
+        {error && (
+          <p
+            className={`mt-4 text-center ${theme === "dark" ? "text-red-400" : "text-red-600"}`}
+          >
+            {error}
+          </p>
+        )}
       </div>
     </>
   );

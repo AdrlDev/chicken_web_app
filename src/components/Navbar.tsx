@@ -5,7 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import Link from "next/link";
 // Import necessary icons
-import { Bars3Icon, XMarkIcon, UserIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  UserIcon,
+  ArrowRightStartOnRectangleIcon,
+} from "@heroicons/react/24/outline";
 import { useTheme } from "./themes/ThemeContext";
 import ThemeSwitch from "./themes/ThemeSwitch";
 import { useAuth } from "@/hooks/loginHooks/useAuth"; // <-- Import the useAuth hook
@@ -13,7 +18,7 @@ import { useAuth } from "@/hooks/loginHooks/useAuth"; // <-- Import the useAuth 
 // --- Navigation Links ---
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "Scan", href: "/camera" },
+  { name: "Scan", href: "/scan" },
   { name: "Train", href: "/train" },
   { name: "About", href: "/about" }, // example page not implemented
 ];
@@ -21,17 +26,18 @@ const navigation = [
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false); // State for user dropdown
-  
+
   const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
   // --- Auth State from Hook ---
   const { user, isLoading, logout } = useAuth();
-  
+
   // Define colors based on theme
   const textColor = theme === "dark" ? "text-white" : "text-gray-900";
-  const hoverColor = theme === "dark" ? "hover:text-indigo-400" : "hover:text-indigo-600";
+  const hoverColor =
+    theme === "dark" ? "hover:text-indigo-400" : "hover:text-indigo-600";
   const activeColor = theme === "dark" ? "text-indigo-400" : "text-indigo-600";
   const bgColor = theme === "dark" ? "bg-gray-900/30" : "bg-white/30";
   const dropdownBg = theme === "dark" ? "bg-gray-800" : "bg-white";
@@ -42,24 +48,24 @@ export default function Navbar() {
     router.push(implementedPages.includes(href) ? href : "/not-found");
     setMobileMenuOpen(false);
   };
-  
+
   const handleLogout = () => {
-      logout();
-      setDropdownOpen(false);
-      // Redirect to home or login page after logout
-      router.push('/login'); 
-  }
+    logout();
+    setDropdownOpen(false);
+    // Redirect to home or login page after logout
+    router.push("/login");
+  };
 
   const renderNavButtons = (isMobile = false) =>
     navigation.map((item) => {
       const isActive = pathname === item.href;
       const baseClasses = `block ${
-        isMobile ? "w-full text-left px-3 py-2 rounded-lg" : "relative text-sm font-semibold group"
+        isMobile
+          ? "w-full text-left px-3 py-2 rounded-lg"
+          : "relative text-sm font-semibold group"
       } transition-colors duration-300`;
-      
-      const itemClasses = isActive
-        ? activeColor
-        : `${textColor} ${hoverColor}`;
+
+      const itemClasses = isActive ? activeColor : `${textColor} ${hoverColor}`;
 
       return (
         <button
@@ -80,75 +86,79 @@ export default function Navbar() {
       );
     });
 
-    const AuthButtonOrIcon = (isMobile = false) => {
-        // Show nothing if loading to prevent flashing the login button
-        if (isLoading) return null; 
+  const AuthButtonOrIcon = (isMobile = false) => {
+    // Show nothing if loading to prevent flashing the login button
+    if (isLoading) return null;
 
-        if (user) {
-            // --- Logged In: User Icon / Dropdown ---
-            return (
-                <div className={`relative ${isMobile ? "w-full" : ""}`}>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (isMobile) {
-                                handleLogout(); // Mobile logout immediately on button click
-                            } else {
-                                setDropdownOpen(!dropdownOpen); // Toggle dropdown on desktop
-                            }
-                        }}
-                        className={`flex items-center justify-center p-2 rounded-full transition-colors duration-300 ${
-                            isMobile ? `w-full ${textColor} ${hoverColor} font-semibold gap-2` : `${textColor} ${hoverColor} border border-transparent`
-                        }`}
-                        aria-expanded={dropdownOpen}
-                    >
-                        <UserIcon className="w-6 h-6" />
-                        {!isMobile && (
-                            <span className="sr-only">Open user menu</span>
-                        )}
-                        {isMobile && <span className="text-left flex-grow">Logout ({user.email})</span>}
-                    </button>
+    if (user) {
+      // --- Logged In: User Icon / Dropdown ---
+      return (
+        <div className={`relative ${isMobile ? "w-full" : ""}`}>
+          <button
+            type="button"
+            onClick={() => {
+              if (isMobile) {
+                handleLogout(); // Mobile logout immediately on button click
+              } else {
+                setDropdownOpen(!dropdownOpen); // Toggle dropdown on desktop
+              }
+            }}
+            className={`flex items-center justify-center p-2 rounded-full transition-colors duration-300 ${
+              isMobile
+                ? `w-full ${textColor} ${hoverColor} font-semibold gap-2`
+                : `${textColor} ${hoverColor} border border-transparent`
+            }`}
+            aria-expanded={dropdownOpen}
+          >
+            <UserIcon className="w-6 h-6" />
+            {!isMobile && <span className="sr-only">Open user menu</span>}
+            {isMobile && (
+              <span className="text-left flex-grow">Logout ({user.email})</span>
+            )}
+          </button>
 
-                    {/* Desktop Dropdown Menu */}
-                    {!isMobile && dropdownOpen && (
-                        <div
-                            className={`absolute right-0 mt-2 w-48 ${dropdownBg} rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none`}
-                            role="menu"
-                            aria-orientation="vertical"
-                        >
-                            <div className="py-1">
-                                <span className={`block px-4 py-2 text-sm font-medium ${textColor} border-b border-gray-600/30 truncate`}>
-                                    {user.email}
-                                </span>
-                                <button
-                                    onClick={handleLogout}
-                                    className={`flex items-center w-full px-4 py-2 text-sm ${textColor} ${hoverColor} transition-colors duration-200`}
-                                    role="menuitem"
-                                >
-                                    <ArrowRightStartOnRectangleIcon className="w-5 h-5 mr-2" />
-                                    Logout
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        } else {
-            // --- Not Logged In: Login Button ---
-            return (
-                <button
-                    onClick={() => handleNavClick("/login")}
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                        isMobile 
-                            ? `w-full text-left ${textColor} ${hoverColor} border border-gray-600/30`
-                            : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
-                    }`}
+          {/* Desktop Dropdown Menu */}
+          {!isMobile && dropdownOpen && (
+            <div
+              className={`absolute right-0 mt-2 w-48 ${dropdownBg} rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none`}
+              role="menu"
+              aria-orientation="vertical"
+            >
+              <div className="py-1">
+                <span
+                  className={`block px-4 py-2 text-sm font-medium ${textColor} border-b border-gray-600/30 truncate`}
                 >
-                    Login
+                  {user.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className={`flex items-center w-full px-4 py-2 text-sm ${textColor} ${hoverColor} transition-colors duration-200`}
+                  role="menuitem"
+                >
+                  <ArrowRightStartOnRectangleIcon className="w-5 h-5 mr-2" />
+                  Logout
                 </button>
-            );
-        }
-    };
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      // --- Not Logged In: Login Button ---
+      return (
+        <button
+          onClick={() => handleNavClick("/login")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+            isMobile
+              ? `w-full text-left ${textColor} ${hoverColor} border border-gray-600/30`
+              : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
+          }`}
+        >
+          Login
+        </button>
+      );
+    }
+  };
 
   return (
     <>
@@ -191,7 +201,11 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile menu */}
-      <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
+      <Dialog
+        open={mobileMenuOpen}
+        onClose={setMobileMenuOpen}
+        className="lg:hidden"
+      >
         <div className="fixed inset-0 z-50" />
         <DialogPanel
           className={`fixed inset-y-0 right-0 z-50 w-full overflow-y-auto p-6 sm:max-w-sm sm:ring-1 sm:ring-white/20 backdrop-blur-lg transition-colors duration-500 ${bgColor} ${textColor}`}
@@ -226,7 +240,7 @@ export default function Navbar() {
           <div className="mt-6 flex flex-col gap-4">
             {renderNavButtons(true)}
             <div className="pt-4 mt-4 border-t border-gray-700/50">
-                {AuthButtonOrIcon(true)} {/* Mobile Auth */}
+              {AuthButtonOrIcon(true)} {/* Mobile Auth */}
             </div>
             <div className="mt-4">
               <ThemeSwitch />
