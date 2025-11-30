@@ -1,3 +1,5 @@
+// components/scan/FeatureCard.tsx (FIXED)
+
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
@@ -6,7 +8,8 @@ import { useTheme } from "@/components/themes/ThemeContext";
 // Define the required properties for the card
 interface FeatureCardProps {
   title: string;
-  subtitle: string;
+  // 🔥 FIX: Change 'string' to 'React.ReactNode' to allow JSX elements (fragments, spans, etc.)
+  subtitle: React.ReactNode;
   icon: React.ReactNode;
   href: string;
 }
@@ -49,6 +52,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         {icon}
       </div>
       <h2 className="text-xl font-semibold mb-1">{title}</h2>
+      {/* The component renders ReactNode safely */}
       <p className={`text-sm ${supTextColor}`}>{subtitle}</p>
     </motion.a>
   );

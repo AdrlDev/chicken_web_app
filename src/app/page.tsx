@@ -1,3 +1,5 @@
+// HomePage.tsx (Layout Adjusted for Flat Cards and Stacked Charts)
+
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -6,12 +8,11 @@ import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
 import Footer from "@/components/footer/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import ChickenHealthChart from "@/components/dashboard/ChickenHealthChart";
+import ChickenHealthChart from "@/components/dashboard/ChickenHealthChart"; // Static Import
+import HealthTrendChart from "@/components/dashboard/HealthTrendChart"; // Static Import
 import { useTheme } from "@/components/themes/ThemeContext";
-// 👈 IMPORT THE NEW HOOK
 import { useStatCardData } from "@/hooks/chickenScanHooks/useStatCardData";
 import StatCard from "@/components/dashboard/StatCard";
-// Import icons (assuming you use lucide-react or similar, otherwise replace with actual SVGs)
 
 // Icon definitions remain the same...
 // Icon for Total Scans
@@ -58,13 +59,15 @@ export default function HomePage() {
   const router = useRouter();
   const { theme } = useTheme();
 
-  // 👈 CALL THE NEW STATS HOOK
   const { totalScans, healthRate, healthRatePercent, isStatsLoading } =
     useStatCardData();
 
   const textColor = theme === "dark" ? "text-gray-300" : "text-gray-900";
   const supTextColor = theme === "dark" ? "text-slate-400" : "text-slate-500";
   const bgColor = theme === "dark" ? "bg-gray-900" : "bg-white";
+
+  // Card styling for charts (will be applied below)
+  const chartCardStyle = `p-6 md:p-8 rounded-2xl border backdrop-blur-xl ${theme === "dark" ? "bg-slate-900/60 border-white/10 shadow-2xl" : "bg-white/80 border-slate-200 shadow-sm"} transition-colors duration-300 h-full flex flex-col`;
 
   useEffect(() => {
     if (!isLoading && user === null) {
@@ -84,7 +87,6 @@ export default function HomePage() {
     return null;
   }
 
-  // Use a temporary loading message for the stats cards if they are still fetching
   const scanValue = isStatsLoading ? (
     <LoadingSpinner size={24} />
   ) : (
@@ -121,42 +123,68 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Dashboard Grid - Clean and Modularized */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Chart (2 columns wide) */}
-          <motion.div
-            className="lg:col-span-2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+        {/* Daily Health Trend - Full Width (TOP) */}
+        <motion.div
+          // 🔥 FIX: Restore the Card styling (chartCardStyle) and flex-col/min-h
+          className={`mb-6 ${chartCardStyle} min-h-[400px]`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {/* 🔥 FIX: Restore Title and Subtitle */}
+          <h2
+            className={`text-xl font-bold mb-1 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
           >
-            {/* ChickenHealthChart is already using the data fetching hook */}
-            <ChickenHealthChart />
-          </motion.div>
+            Daily Health Trend
+          </h2>
+          <p className={`text-sm mb-4 ${supTextColor}`}>
+            Monitor healthy and detected issue scans over the last 7 days.
+          </p>
+          {/* This wrapper div provides the necessary flex-grow for the chart to fill the remaining space */}
+          <div className="flex-grow">
+            <HealthTrendChart />
+          </div>
+        </motion.div>
 
-          {/* Side Stats Column (1 column wide, using StatCard component) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Scan Overview (Pie Chart) - Takes 2/3 of the bottom row */}
           <motion.div
-            className="grid grid-cols-1 gap-6 lg:col-span-1"
+            className={`lg:col-span-2 min-h-[400px]`} // Apply card styling to chart itself
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            {/* Stat Card 1: Total Scans - Uses live data */}
+            <div className="flex-grow">
+              <ChickenHealthChart />
+            </div>
+          </motion.div>
+
+          {/* Side Stats Column (1/3 of the bottom row) - NO CARD STYLING */}
+          <motion.div
+            className="grid grid-cols-1 gap-6 lg:col-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            {/* Stat Card 1: Total Scans - Use StatCard component, but remove outer card styling via its implementation */}
             <StatCard
               title="TOTAL SCANS"
-              value={scanValue} // 👈 DYNAMIC VALUE
+              value={scanValue}
               colorClass={`${theme === "dark" ? "text-indigo-400" : "text-indigo-600"}`}
               icon={ScanIcon}
               showProgressBar={false}
+              // Assuming StatCard handles minimal/flat styling internally,
+              // otherwise you'd need to modify StatCard.tsx to accept a 'flat' prop.
+              // For now, we rely on the component being flat by default or making StatCard flat.
             />
 
             {/* Stat Card 2: Health Rate - Uses live data */}
             <StatCard
               title="HEALTH RATE"
-              value={healthValue} // 👈 DYNAMIC VALUE
+              value={healthValue}
               colorClass={`${theme === "dark" ? "text-green-400" : "text-green-600"}`}
               icon={HeartIcon}
-              showProgressBar={true} // Enable progress bar for this card
+              showProgressBar={true}
               progressBarValue={healthRatePercent}
             />
           </motion.div>

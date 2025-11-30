@@ -1,3 +1,5 @@
+// components/pages/ScanPage.tsx (FIXED)
+
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -54,22 +56,40 @@ export default function ScanPage() {
   const scanFeatures = [
     {
       title: "Real-Time Flock Monitoring",
-      subtitle:
-        "Start **Live Detection** using your device's camera for immediate health alerts.",
+      // FIX: Apply span to **Live Detection**
+      subtitle: (
+        <>
+          Start{" "}
+          <span className={primaryColor + " font-bold"}>Live Detection</span>{" "}
+          using your device&apos;s camera for immediate health alerts.
+        </>
+      ),
       icon: <CameraIcon className="w-7 h-7" />,
       href: "/scan/live",
     },
     {
       title: "Diagnostic Image Upload",
-      subtitle:
-        "Upload high-resolution **Image Scans** of individual birds for rapid, detailed AI assessment.",
+      // FIX: Apply span to **Image Scans**
+      subtitle: (
+        <>
+          Upload high-resolution{" "}
+          <span className={primaryColor + " font-bold"}>Image Scans</span> of
+          individual birds for rapid, detailed AI assessment.
+        </>
+      ),
       icon: <PhotoIcon className="w-7 h-7" />,
       href: "/scan/image",
     },
     {
       title: "Behavioral Video Analysis",
-      subtitle:
-        "Upload **Video Scans** to analyze group behavior, movement, and early distress signs.",
+      // FIX: Apply span to **Video Scans**
+      subtitle: (
+        <>
+          Upload{" "}
+          <span className={primaryColor + " font-bold"}>Video Scans</span> to
+          analyze group behavior, movement, and early distress signs.
+        </>
+      ),
       icon: <VideoCameraIcon className="w-7 h-7" />,
       href: "/scan/video",
     },
@@ -142,8 +162,11 @@ export default function ScanPage() {
             className={`${supTextColor} mt-3 text-lg md:text-xl max-w-3xl`}
           >
             Instantly diagnose and monitor your flock with our advanced
-            **AI-powered computer vision**. Choose a method below to begin a
-            rapid, non-invasive health scan.
+            <span className={primaryColor + " font-bold"}>
+              {" "}
+              AI-powered computer vision
+            </span>
+            . Choose a method below to begin a rapid, non-invasive health scan.
           </motion.p>
         </div>
 
