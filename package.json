@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "export NODE_OPTIONS=--max-old-space-size=4096 && next build --turbopack",
+    "build": "export NODE_OPTIONS=--max-old-space-size=4096 && next build",
     "start": "next start",
     "lint": "eslint"
   },
