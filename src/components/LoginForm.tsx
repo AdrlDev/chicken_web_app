@@ -60,10 +60,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4 antialiased 
-                    bg-gray-100 dark:bg-gray-950 transition-colors duration-500"
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 antialiased duration-500">
       {/* Login Card */}
       <form
         onSubmit={handleSubmit}

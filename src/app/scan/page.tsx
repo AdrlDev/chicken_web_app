@@ -197,7 +197,7 @@ export default function ScanPage() {
         </motion.h2>
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
@@ -207,6 +207,7 @@ export default function ScanPage() {
               key={feature.title}
               variants={itemVariants}
               transition={{ delay: 0.6 + index * 0.1 }} // Delayed after stats
+              className="h-full"
             >
               {/* FeatureCard component is assumed to handle its own styling/animation */}
               <FeatureCard {...feature} />

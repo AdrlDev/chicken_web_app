@@ -287,7 +287,7 @@ export default function UploadPage() {
               {/* --- UPLOAD CARD CONTAINER --- */}
               {!isTrainingActive && (
                 <Card
-                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-500/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"}`}
+                  className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-400/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"}`}
                 >
                   {/* Label Dropdown */}
                   <motion.div variants={itemVariants} className="mb-6">
@@ -414,7 +414,7 @@ export default function UploadPage() {
             {/* RIGHT CARD: Training Status and Logs (Step 2) */}
             <div className="lg:col-span-1">
               <motion.h2
-                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center`}
+                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center mt-8 lg:mt-0`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -425,7 +425,7 @@ export default function UploadPage() {
 
               {/* --- LOGS CARD CONTAINER --- */}
               <Card
-                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-500/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"} min-h-96`}
+                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-400/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"} min-h-96`}
               >
                 {" "}
                 {/* Added min-height for better visual balance */}

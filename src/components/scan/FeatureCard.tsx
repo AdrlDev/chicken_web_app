@@ -36,7 +36,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
     <motion.a
       href={href}
       className={`block p-6 rounded-xl border ${cardBg} transition duration-300 ease-in-out shadow-lg 
-                  transform hover:shadow-xl hover:-translate-y-0.5`}
+                  transform h-full flex flex-col hover:shadow-xl hover:-translate-y-0.5`}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.01 }}
@@ -44,7 +44,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
     >
       <div
-        className={`w-10 h-10 flex items-center justify-center rounded-full mb-4 ${iconBg}`}
+        className={`w-10 h-full flex items-center justify-center rounded-full mb-4 ${iconBg}`}
       >
         {icon}
       </div>
