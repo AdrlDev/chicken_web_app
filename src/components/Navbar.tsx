@@ -1,198 +1,253 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useTheme } from "@/components/themes/ThemeContext";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/footer/Footer";
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Dialog, DialogPanel } from "@headlessui/react";
+import Link from "next/link";
+// Import necessary icons
 import {
-  HeartHandshake, // Trust/Care
-  BrainCircuit, // AI/Tech
-  ShieldCheck, // Accuracy/Reliability
-  Globe, // Global Impact
-} from "lucide-react"; // Using Lucide for modern icons
+  Bars3Icon,
+  XMarkIcon,
+  UserIcon,
+  ArrowRightStartOnRectangleIcon,
+} from "@heroicons/react/24/outline";
+import { useTheme } from "./themes/ThemeContext";
+import ThemeSwitch from "./themes/ThemeSwitch";
+import { useAuth } from "@/hooks/loginHooks/useAuth"; // <-- Import the useAuth hook
 
-// --- Framer Motion Variants ---
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
+// --- Navigation Links ---
+const navigation = [
+  { name: "Home", href: "/" },
+  { name: "Scan", href: "/scan" },
+  { name: "Train", href: "/train" },
+  { name: "About", href: "/about" }, // example page not implemented
+];
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
-};
+export default function Navbar() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false); // State for user dropdown
 
-// --- Core Component ---
-export default function AboutPage() {
   const { theme } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Theme-aware styles
-  const isDark = theme === "dark";
-  const bgColor = isDark ? "bg-gray-950" : "bg-gray-50";
-  const primaryTextColor = isDark ? "text-gray-100" : "text-gray-900";
-  const secondaryTextColor = isDark ? "text-slate-400" : "text-slate-600";
-  const cardBg = isDark
-    ? "bg-gray-800/60 border-gray-700"
-    : "bg-white/90 border-gray-200";
-  const primaryColor = "text-indigo-500";
+  // --- Auth State from Hook ---
+  const { user, isLoading, logout } = useAuth();
 
-  const missionPoints = [
-    {
-      icon: <BrainCircuit className={`w-8 h-8 ${primaryColor}`} />,
-      title: "Advanced AI Core",
-      description:
-        "Leveraging cutting-edge computer vision models (YOLOv8) trained on comprehensive veterinary datasets to ensure robust and fast diagnostics.",
-    },
-    {
-      icon: <ShieldCheck className={`w-8 h-8 ${primaryColor}`} />,
-      title: "Unrivaled Accuracy",
-      description:
-        "Our models are continuously validated, providing high confidence (98.5%+) in detecting common poultry diseases and early distress signs.",
-    },
-    {
-      icon: <HeartHandshake className={`w-8 h-8 ${primaryColor}`} />,
-      title: "Built with Care",
-      description:
-        "Our mission is to support farmers by reducing losses and improving animal welfare through non-invasive, timely health monitoring.",
-    },
-    {
-      icon: <Globe className={`w-8 h-8 ${primaryColor}`} />,
-      title: "Accessibility & Scalability",
-      description:
-        "Providing an accessible platform that works on various devices, making advanced diagnostics available to farms of any size globally.",
-    },
-  ];
+  // Define colors based on theme
+  const textColor = theme === "dark" ? "text-white" : "text-gray-900";
+  const hoverColor =
+    theme === "dark" ? "hover:text-indigo-400" : "hover:text-indigo-600";
+  const activeColor = theme === "dark" ? "text-indigo-400" : "text-indigo-600";
+  const bgColor = theme === "dark" ? "bg-gray-900/30" : "bg-white/30";
+  const dropdownBg = theme === "dark" ? "bg-gray-800" : "bg-white";
+
+  // Redirect to implemented page or custom 404
+  const handleNavClick = (href: string) => {
+    const implementedPages = ["/", "/scan", "/train", "/about", "/login"]; // Added /login
+    router.push(implementedPages.includes(href) ? href : "/not-found");
+    setMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setDropdownOpen(false);
+    // Redirect to home or login page after logout
+    router.push("/login");
+  };
+
+  const renderNavButtons = (isMobile = false) =>
+    navigation.map((item) => {
+      const isActive = pathname === item.href;
+      const baseClasses = `block ${
+        isMobile
+          ? "w-full text-left px-3 py-2 rounded-lg"
+          : "relative text-sm font-semibold group"
+      } transition-colors duration-300`;
+
+      const itemClasses = isActive ? activeColor : `${textColor} ${hoverColor}`;
+
+      return (
+        <button
+          key={item.name}
+          onClick={() => handleNavClick(item.href)}
+          className={`${baseClasses} ${itemClasses}`}
+        >
+          {item.name}
+
+          {/* Animated underline */}
+          {!isMobile && (
+            <span
+              className={`absolute left-0 -bottom-1 h-[2px] bg-indigo-500 rounded-full transition-all duration-300
+                ${isActive ? "w-full" : "w-0 group-hover:w-full"}`}
+            ></span>
+          )}
+        </button>
+      );
+    });
+
+  const AuthButtonOrIcon = (isMobile = false) => {
+    // Show nothing if loading to prevent flashing the login button
+    if (isLoading) return null;
+
+    if (user) {
+      // --- Logged In: User Icon / Dropdown ---
+      return (
+        <div className={`relative ${isMobile ? "w-full" : ""}`}>
+          <button
+            type="button"
+            onClick={() => {
+              if (isMobile) {
+                handleLogout(); // Mobile logout immediately on button click
+              } else {
+                setDropdownOpen(!dropdownOpen); // Toggle dropdown on desktop
+              }
+            }}
+            className={`flex items-center justify-center p-2 rounded-full transition-colors duration-300 ${
+              isMobile
+                ? `w-full ${textColor} ${hoverColor} font-semibold gap-2`
+                : `${textColor} ${hoverColor} border border-transparent`
+            }`}
+            aria-expanded={dropdownOpen}
+          >
+            <UserIcon className="w-6 h-6" />
+            {!isMobile && <span className="sr-only">Open user menu</span>}
+            {isMobile && (
+              <span className="text-left flex-grow">Logout ({user.email})</span>
+            )}
+          </button>
+
+          {/* Desktop Dropdown Menu */}
+          {!isMobile && dropdownOpen && (
+            <div
+              className={`absolute right-0 mt-2 w-48 ${dropdownBg} rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none`}
+              role="menu"
+              aria-orientation="vertical"
+            >
+              <div className="py-1">
+                <span
+                  className={`block px-4 py-2 text-sm font-medium ${textColor} border-b border-gray-600/30 truncate`}
+                >
+                  {user.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className={`flex items-center w-full px-4 py-2 text-sm ${textColor} ${hoverColor} transition-colors duration-200`}
+                  role="menuitem"
+                >
+                  <ArrowRightStartOnRectangleIcon className="w-5 h-5 mr-2" />
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      // --- Not Logged In: Login Button ---
+      return (
+        <button
+          onClick={() => handleNavClick("/login")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+            isMobile
+              ? `w-full text-left ${textColor} ${hoverColor} border border-gray-600/30`
+              : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
+          }`}
+        >
+          Login
+        </button>
+      );
+    }
+  };
 
   return (
-    <div className={`min-h-screen ${bgColor} transition-colors duration-300`}>
-      <header className="fixed inset-x-0 top-0 z-50 backdrop-blur-sm bg-opacity-70">
-        <Navbar />
-      </header>
+    <>
+      {/* Navbar */}
+      <nav
+        className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between p-6 lg:px-8 transition-colors duration-500 backdrop-blur-lg shadow-lg ${bgColor} ${textColor}`}
+      >
+        {/* Logo */}
+        <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-3">
+          <div
+            className={`h-10 w-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors duration-500 ${
+              theme === "dark" ? "bg-white/10" : "bg-gray-200/20"
+            }`}
+          >
+            <span className="select-none font-bold">🐔</span>
+          </div>
+          <h1 className="text-xl font-semibold transition-colors duration-500">
+            Chicken Scanner
+          </h1>
+        </Link>
 
-      <main className="relative z-10 pt-32 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+        {/* Desktop nav + Auth/Theme Switch */}
+        <div className="hidden lg:flex lg:items-center lg:gap-6">
+          <div className="flex gap-x-12">{renderNavButtons()}</div>
+          {AuthButtonOrIcon(false)} {/* Desktop Auth */}
+          <ThemeSwitch />
+        </div>
+
+        {/* Mobile menu button */}
+        <div className="lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="inline-flex items-center justify-center rounded-md p-2.5 text-current"
+          >
+            <span className="sr-only">Open main menu</span>
+            <Bars3Icon className="w-6 h-6" />
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile menu */}
+      <Dialog
+        open={mobileMenuOpen}
+        onClose={setMobileMenuOpen}
+        className="lg:hidden"
+      >
+        <div className="fixed inset-0 z-50" />
+        <DialogPanel
+          className={`fixed inset-y-0 right-0 z-50 w-full overflow-y-auto p-6 sm:max-w-sm sm:ring-1 sm:ring-white/20 backdrop-blur-lg transition-colors duration-500 ${bgColor} ${textColor}`}
         >
-          {/* Header Section */}
-          <motion.section variants={itemVariants} className="mb-16 text-center">
-            <h1
-              className={`text-5xl md:text-7xl font-extrabold tracking-tight mb-4 ${primaryTextColor}`}
-            >
-              The Power of <span className={primaryColor}>AI Health Scan</span>
-            </h1>
-            <p
-              className={`text-xl md:text-2xl max-w-4xl mx-auto ${secondaryTextColor}`}
-            >
-              We&apos;re transforming poultry management from reactive treatment
-              to **proactive, instant diagnosis** using computer vision
-              technology.
-            </p>
-          </motion.section>
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-3">
+              <div
+                className={`h-10 w-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors duration-500 ${
+                  theme === "dark" ? "bg-white/10" : "bg-gray-200/20"
+                }`}
+              >
+                <span className="select-none font-bold">🐔</span>
+              </div>
+              <h1 className="text-xl font-semibold transition-colors duration-500">
+                Chicken Scanner
+              </h1>
+            </Link>
 
-          <hr
-            className={`mb-16 ${isDark ? "border-gray-800" : "border-gray-200"}`}
-          />
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="-m-2.5 rounded-md p-2.5 text-current"
+            >
+              <span className="sr-only">Close menu</span>
+              <XMarkIcon className="w-6 h-6" />
+            </button>
+          </div>
 
-          {/* Mission & Vision */}
-          <motion.section
-            variants={itemVariants}
-            className="grid md:grid-cols-2 gap-12 mb-20"
-          >
-            <div>
-              <h2 className={`text-3xl font-bold mb-4 ${primaryColor}`}>
-                Our Vision
-              </h2>
-              <p className={`text-lg ${secondaryTextColor} leading-relaxed`}>
-                To set the global standard for non-invasive livestock health
-                monitoring. We envision a future where disease detection is
-                instant, accessible, and integrated directly into daily farming
-                operations, eliminating the lag time and subjectivity of
-                traditional diagnosis.
-              </p>
+          {/* Navigation + Auth + ThemeSwitch */}
+          <div className="mt-6 flex flex-col gap-4">
+            {renderNavButtons(true)}
+            <div className="pt-4 mt-4 border-t border-gray-700/50">
+              {AuthButtonOrIcon(true)} {/* Mobile Auth */}
             </div>
-            <div>
-              <h2 className={`text-3xl font-bold mb-4 ${primaryColor}`}>
-                The Problem We Solve
-              </h2>
-              <p className={`text-lg ${secondaryTextColor} leading-relaxed`}>
-                Poultry diseases spread rapidly, causing devastating financial
-                loss and requiring costly, time-consuming lab tests. Our AI
-                system provides **on-the-spot analysis** from simple image or
-                video uploads, allowing farmers to isolate affected birds and
-                begin treatment within minutes, not days.
-              </p>
+            <div className="mt-4">
+              <ThemeSwitch />
             </div>
-          </motion.section>
-
-          <hr
-            className={`mb-16 ${isDark ? "border-gray-800" : "border-gray-200"}`}
-          />
-
-          {/* Feature Pillars */}
-          <section className="mb-20">
-            <motion.h2
-              variants={itemVariants}
-              className={`text-center text-4xl font-bold mb-12 ${primaryTextColor}`}
-            >
-              Our Core Pillars
-            </motion.h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {missionPoints.map((point, index) => (
-                <motion.div
-                  key={index}
-                  variants={itemVariants}
-                  transition={{ delay: 0.1 * index }}
-                  className={`p-6 rounded-2xl ${cardBg} border shadow-xl backdrop-blur-sm h-full flex flex-col`}
-                >
-                  <div
-                    className={`mb-4 p-3 rounded-xl inline-block ${isDark ? "bg-indigo-600/10" : "bg-indigo-100"}`}
-                  >
-                    {point.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3">{point.title}</h3>
-                  <p className={`text-sm ${secondaryTextColor} flex-grow`}>
-                    {point.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          {/* Call to Action */}
-          <motion.section
-            variants={itemVariants}
-            className="text-center p-10 md:p-16 rounded-3xl bg-indigo-500/10 dark:bg-indigo-500/15 border border-indigo-500/30"
-          >
-            <h2
-              className={`text-3xl md:text-4xl font-extrabold mb-4 ${primaryColor}`}
-            >
-              Ready to Proactively Manage Flock Health?
-            </h2>
-            <p className={`text-lg mb-6 ${secondaryTextColor}`}>
-              Start a scan today and experience the future of veterinary
-              diagnostics.
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => (window.location.href = "/scan")}
-              className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg shadow-indigo-500/50 hover:bg-indigo-700 transition-colors"
-            >
-              Go to Scan Page
-            </motion.button>
-          </motion.section>
-        </motion.div>
-      </main>
-
-      <Footer />
-    </div>
+          </div>
+        </DialogPanel>
+      </Dialog>
+    </>
   );
 }
