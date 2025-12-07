@@ -27,6 +27,7 @@ interface ImagePreviewGridProps {
   selectedFiles: File[];
   selectedLabel: string;
   reuploadFile: (fileName: string, label: string, files: File[]) => void;
+  onPreviewsReady: (isReady: boolean) => void;
 }
 
 type FileItem = {
@@ -50,6 +51,7 @@ export default function ImagePreviewGrid({
   selectedFiles,
   selectedLabel,
   reuploadFile,
+  onPreviewsReady,
 }: ImagePreviewGridProps) {
   const { theme } = useTheme();
   const [showAll, setShowAll] = useState(false);
@@ -74,6 +76,7 @@ export default function ImagePreviewGrid({
     // Set initial loading state when files are available
     if (selectedFiles.length > 0) {
       setIsLocalLoading(true);
+      onPreviewsReady(false);
     }
 
     const newItems: FileItem[] = selectedFiles.map((file) => ({
@@ -102,6 +105,7 @@ export default function ImagePreviewGrid({
         // Set loading state FALSE when all files have generated URLs
         if (loadedCount === totalFiles) {
           setIsLocalLoading(false);
+          onPreviewsReady(true);
         }
       }, 50);
     });

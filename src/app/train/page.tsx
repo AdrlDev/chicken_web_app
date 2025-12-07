@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/loginHooks/useAuth";
 import TrainLayout from "@/components/TrainLayout";
@@ -15,8 +15,6 @@ import {
   CloudArrowUpIcon,
   AcademicCapIcon,
   ClockIcon,
-  EyeIcon,
-  EyeSlashIcon,
 } from "@heroicons/react/24/solid";
 import ImagePreviewGrid from "@/components/upload/ImagePreview";
 import UploadTrainButtons from "@/components/upload/UploadTrainButtons";
@@ -99,7 +97,8 @@ export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [isTrainingActive, setIsTrainingActive] = useState(false);
-  const [isAddingFiles, setIsAddingFiles] = useState(false);
+  // ✨ NEW STATE: Tracks when the ImagePreviewGrid has finished generating local URLs
+  const [previewsReady, setPreviewsReady] = useState(true);
   // ✨ NEW STATE: For post-upload prompt
   const [showUploadMoreDialog, setShowUploadMoreDialog] = useState(false);
 
@@ -195,11 +194,7 @@ export default function UploadPage() {
 
   // Handlers
   const handleFilesAdded = (files: File[]) => {
-    setIsAddingFiles(true);
     setSelectedFiles((prev) => [...prev, ...files]);
-    setTimeout(() => {
-      setIsAddingFiles(false);
-    }, 100);
   };
 
   const handleUpload = async () => {
@@ -286,7 +281,7 @@ export default function UploadPage() {
           variants={containerVariants}
         >
           {/* Spinner overlay while files are initially being processed by the browser */}
-          {isAddingFiles && (
+          {!previewsReady && selectedFiles.length > 0 && (
             <div
               className={`absolute inset-0 ${overlayBg} z-40 flex items-center justify-center rounded-xl backdrop-blur-sm transition-opacity duration-300`}
             >
@@ -299,10 +294,10 @@ export default function UploadPage() {
                   color2="purple-400"
                 />
                 <p className={`mt-4 text-xl font-semibold ${primaryTextColor}`}>
-                  Preparing Images...
+                  Preparing Image Previews...
                 </p>
                 <p className={`mt-1 text-sm ${secondaryTextColor}`}>
-                  Processing {selectedFiles.length} files for preview.
+                  Generating local URLs for {selectedFiles.length} files.
                 </p>
               </div>
             </div>
@@ -442,6 +437,7 @@ export default function UploadPage() {
                         selectedFiles={selectedFiles}
                         selectedLabel={selectedLabel}
                         reuploadFile={reuploadFile}
+                        onPreviewsReady={setPreviewsReady}
                       />
                     </motion.div>
                   )}
