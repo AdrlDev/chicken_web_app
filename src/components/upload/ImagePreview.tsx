@@ -73,11 +73,16 @@ export default function ImagePreviewGrid({
       return;
     }
 
-    // Set initial loading state when files are available
-    if (selectedFiles.length > 0) {
-      setIsLocalLoading(true);
-      onPreviewsReady(false);
+    // Handle case where selectedFiles is empty (reset loading)
+    if (selectedFiles.length === 0) {
+      setIsLocalLoading(false);
+      onPreviewsReady(true);
+      return;
     }
+
+    // Set initial loading state when files are available
+    setIsLocalLoading(true);
+    onPreviewsReady(false);
 
     const newItems: FileItem[] = selectedFiles.map((file) => ({
       type: "local",
@@ -93,11 +98,14 @@ export default function ImagePreviewGrid({
     newItems.forEach((item, idx) => {
       const url = URL.createObjectURL(item.file);
 
-      // Simulate browser loading/processing time
+      // FIX: Changed artificial delay from 50ms to 0ms
       setTimeout(() => {
         setFileItems((prev) => {
           const updated = [...prev];
-          updated[idx] = { ...item, url, loading: false };
+          // Ensure index is valid to prevent crashes during rapid state changes
+          if (updated[idx]) {
+            updated[idx] = { ...item, url, loading: false };
+          }
           return updated;
         });
 
@@ -107,19 +115,14 @@ export default function ImagePreviewGrid({
           setIsLocalLoading(false);
           onPreviewsReady(true);
         }
-      }, 50);
+      }, 0); // <-- FIX: Removed artificial delay
     });
-
-    // Handle case where selectedFiles is empty (reset loading)
-    if (selectedFiles.length === 0) {
-      setIsLocalLoading(false);
-    }
 
     return () => {
       newItems.forEach((item) => item.url && URL.revokeObjectURL(item.url));
       setIsLocalLoading(false);
     };
-  }, [selectedFiles, shouldShowLocalFiles]);
+  }, [selectedFiles, shouldShowLocalFiles, onPreviewsReady]); // FIX: Added missing dependency
 
   // Track loading for uploaded status images
   useEffect(() => {
