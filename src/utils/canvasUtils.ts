@@ -57,7 +57,6 @@ export const labelColors: Record<string, string> = {
   "avian Influenza": "#ff9341ff",
   "blue comb": "#00fffbff",
   coccidiosis: "#da4e4eff",
-  "coccidiosis poops": "#cc0909ff",
   "fowl cholera": "#f188f3ff",
   "fowl-pox": "#ff00bfff",
   "mycotic infections": "#ffdc5eff",
