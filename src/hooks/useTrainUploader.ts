@@ -61,6 +61,22 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
   const wsRef = useRef<WebSocket | null>(null);
 
   // ------------------------
+  // FIX: Implement resetUploadState
+  // ------------------------
+  const resetUploadState = useCallback(() => {
+    setUploading(false);
+    setUploadStatuses([]);
+    setTrainLogs([]);
+    setTrainingProgress(0);
+    // Close WebSocket connection if it's open
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+      wsRef.current = null;
+      setTrainLogs((prev) => [...prev, "🛑 Training connection reset."]);
+    }
+  }, []);
+
+  // ------------------------
   // Status Polling
   // ------------------------
   const checkStatus = useCallback(async (fileName: string, taskId: string) => {
@@ -388,5 +404,6 @@ export function useTrainUploader(setIsTrainingActive?: SetTrainingActive) {
     trainModel,
     trainLogs,
     trainProgress,
+    resetUploadState,
   };
 }

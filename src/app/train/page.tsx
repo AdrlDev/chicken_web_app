@@ -2,10 +2,11 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/loginHooks/useAuth";
 import TrainLayout from "@/components/TrainLayout";
+// ASSUMPTION: 'useTrainUploader' now exposes 'resetUploadState'
 import { useTrainUploader } from "@/hooks/useTrainUploader";
 import LabelDropdown from "@/components/dropdown/LabelDropdown";
 import DragDropUpload from "@/components/upload/DragDropUpload";
@@ -14,6 +15,8 @@ import {
   CloudArrowUpIcon,
   AcademicCapIcon,
   ClockIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from "@heroicons/react/24/solid";
 import ImagePreviewGrid from "@/components/upload/ImagePreview";
 import UploadTrainButtons from "@/components/upload/UploadTrainButtons";
@@ -23,7 +26,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { motion } from "framer-motion";
-import { useTheme } from "@/components/themes/ThemeContext"; // ✨ NEW: Import useTheme
+import { useTheme } from "@/components/themes/ThemeContext";
 
 const labels = [
   "healthy",
@@ -33,9 +36,10 @@ const labels = [
   "fowl cholera",
   "fowl-pox",
   "mycotic infections",
+  "marek's disease",
 ];
 
-// Framer Motion Variants (kept outside for memoization)
+// Framer Motion Variants
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
@@ -54,9 +58,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
-// Reusable Card Component Style (Now uses a theme context if available via props)
-// NOTE: Since the Card component is defined within the file and uses itemVariants,
-// we assume it will inherit theme styling from the UploadPage where it is rendered.
+// Reusable Card Component Style
 const Card = ({
   children,
   className = "",
@@ -92,12 +94,14 @@ const showNotification = (title: string, body: string) => {
 export default function UploadPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const { theme } = useTheme(); // ✨ NEW: Get the current theme
+  const { theme } = useTheme();
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [isTrainingActive, setIsTrainingActive] = useState(false);
   const [isAddingFiles, setIsAddingFiles] = useState(false);
+  // ✨ NEW STATE: For post-upload prompt
+  const [showUploadMoreDialog, setShowUploadMoreDialog] = useState(false);
 
   // Theme-aware color definition for dynamic styles
   const overlayBg = theme === "dark" ? "bg-gray-900/70" : "bg-white/70";
@@ -115,25 +119,26 @@ export default function UploadPage() {
     trainModel,
     trainLogs,
     trainProgress,
+    // ✨ ASSUMED: Hook must expose a reset function for the dialog logic
+    resetUploadState,
   } = useTrainUploader(setIsTrainingActive);
 
   const logContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- 1. Authentication Check (Omitted for brevity, unchanged) ---
+  // --- 1. Authentication Check & Notification Permission ---
   useEffect(() => {
     if (!isLoading && user === null) {
       router.push("/login");
     }
   }, [user, isLoading, router]);
 
-  // ⭐️ FIX: Dedicated useEffect for requesting Notification Permission ONCE (Omitted for brevity, unchanged) ---
   useEffect(() => {
     if ("Notification" in window) {
       Notification.requestPermission();
     }
   }, []);
 
-  // --- 2. Training Status & Notification Logic (Omitted for brevity, unchanged) ---
+  // --- 2. Training Status & Notification Logic ---
   useEffect(() => {
     const finishLog = trainLogs.find(
       (log) =>
@@ -142,7 +147,6 @@ export default function UploadPage() {
     );
 
     if (finishLog) {
-      // Training is done (success or failure)
       setIsTrainingActive(false);
 
       if (finishLog.includes("✅ Training finished")) {
@@ -159,19 +163,40 @@ export default function UploadPage() {
     }
   }, [trainLogs]);
 
-  // Auto-scroll logs (Omitted for brevity, unchanged) ---
+  // ✨ NEW: Post-Upload Check (Triggers dialog when ALL files are processed)
+  useEffect(() => {
+    const totalFilesLoaded = selectedFiles.length;
+    const totalFilesProcessed = uploadStatuses.length;
+
+    // Check if upload was active, is now finished, and all selected files have a status
+    if (
+      !uploading &&
+      totalFilesLoaded > 0 &&
+      totalFilesProcessed === totalFilesLoaded
+    ) {
+      // Don't show the dialog if training is immediately started after upload
+      if (!isTrainingActive) {
+        setShowUploadMoreDialog(true);
+      }
+    }
+  }, [
+    uploading,
+    uploadStatuses.length,
+    selectedFiles.length,
+    isTrainingActive,
+  ]);
+
+  // Auto-scroll logs
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [trainLogs]);
 
-  // Handlers (Omitted for brevity, unchanged) ---
+  // Handlers
   const handleFilesAdded = (files: File[]) => {
-    // 1. Set loading state to true
     setIsAddingFiles(true);
     setSelectedFiles((prev) => [...prev, ...files]);
-    // 3. Use a slight delay to allow the DOM to update and the preview component to start processing
     setTimeout(() => {
       setIsAddingFiles(false);
     }, 100);
@@ -183,17 +208,29 @@ export default function UploadPage() {
 
   const handleTrainModel = async () => {
     try {
-      // Set training state immediately
       setIsTrainingActive(true);
       const data = await trainModel();
       alert(data.message || "Training started!");
     } catch {
-      setIsTrainingActive(false); // Reset on immediate API failure
+      setIsTrainingActive(false);
       alert("Failed to start training");
     }
   };
 
-  // --- Overall Progress Calculation & Upload Stats (Omitted for brevity, unchanged) ---
+  // ✨ NEW: Handlers for the Dialog
+  const handleStartNewUpload = () => {
+    setShowUploadMoreDialog(false);
+    // 1. Reset component state
+    setSelectedFiles([]);
+    setSelectedLabel("");
+    resetUploadState();
+  };
+
+  const handleStayOnPage = () => {
+    setShowUploadMoreDialog(false);
+  };
+
+  // --- Overall Progress Calculation & Upload Stats (unchanged) ---
   const successfullyUploadedCount = uploadStatuses.filter(
     (s) => s.status === "completed",
   ).length;
@@ -208,7 +245,7 @@ export default function UploadPage() {
         uploadStatuses.length
       : 0;
 
-  // --- Loading State Check (Modified for theme consistency) ---
+  // --- Loading State Check (unchanged) ---
   if (isLoading) {
     return (
       <div
@@ -219,14 +256,15 @@ export default function UploadPage() {
     );
   }
 
-  // --- Access Denied/Redirecting State (Omitted for brevity, unchanged) ---
   if (user === null && !isLoading) {
     return null;
   }
 
-  // --- Determine if the training section should be visible (Omitted for brevity, unchanged) ---
+  // --- Conditional Layout Control ---
   const isProgressVisible =
     isTrainingActive || trainLogs.length > 0 || trainProgress > 0;
+
+  const showUploadSection = !isTrainingActive;
 
   // --- Authorized User Content ---
   return (
@@ -270,22 +308,22 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* New Two-Column Grid Layout */}
+          {/* New Two-Column Grid Layout - Dynamically adjusts based on training status */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* LEFT CARD: Upload & Labeling (Step 1) */}
-            <div className="lg:col-span-1">
-              <motion.h2
-                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <CloudArrowUpIcon className="w-5 h-5 mr-2 text-green-500" />
-                Step 1: Upload and Label Data
-              </motion.h2>
+            {/* LEFT CARD: Upload & Labeling (Step 1) - Conditional Hide */}
+            {showUploadSection && (
+              <div className="lg:col-span-1">
+                <motion.h2
+                  className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <CloudArrowUpIcon className="w-5 h-5 mr-2 text-green-500" />
+                  Step 1: Upload and Label Data
+                </motion.h2>
 
-              {/* --- UPLOAD CARD CONTAINER --- */}
-              {!isTrainingActive && (
+                {/* --- UPLOAD CARD CONTAINER --- */}
                 <Card
                   className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-400/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"}`}
                 >
@@ -408,13 +446,18 @@ export default function UploadPage() {
                     </motion.div>
                   )}
                 </Card>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* RIGHT CARD: Training Status and Logs (Step 2) */}
-            <div className="lg:col-span-1">
+            {/* RIGHT CARD: Training Status and Logs (Step 2) - Dynamic Width */}
+            <div
+              className={`
+                ${showUploadSection ? "lg:col-span-1" : "lg:col-span-2"} 
+                transition-all duration-500 ease-in-out
+              `}
+            >
               <motion.h2
-                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center mt-8 lg:mt-0`}
+                className={`text-2xl font-bold mb-4 ${primaryTextColor} flex items-center mt-8 ${showUploadSection ? "lg:mt-0" : "lg:mt-8"}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -425,10 +468,8 @@ export default function UploadPage() {
 
               {/* --- LOGS CARD CONTAINER --- */}
               <Card
-                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-400/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"} min-h-96`}
+                className={`${theme === "dark" ? "bg-gray-800/50 border-gray-800 ring-1 ring-indigo-400/50 shadow-2xl shadow-indigo-900/40" : "bg-gray-50 border-gray-200 ring-gray-200 shadow-xl"} ${isTrainingActive || isProgressVisible ? "min-h-[80vh]" : "min-h-96"}`}
               >
-                {" "}
-                {/* Added min-height for better visual balance */}
                 {/* Upload / Train Buttons */}
                 <motion.div
                   variants={itemVariants}
@@ -447,10 +488,7 @@ export default function UploadPage() {
                 </motion.div>
                 {/* Training Status and Logs Section */}
                 {isProgressVisible ? (
-                  <motion.div
-                    variants={itemVariants}
-                    className="p-1" // Reduced padding as Card already has it
-                  >
+                  <motion.div variants={itemVariants} className="p-1">
                     <h3
                       className={`text-xl font-bold ${primaryTextColor} mb-4 flex items-center`}
                     >
@@ -488,6 +526,47 @@ export default function UploadPage() {
             </div>
           </div>
           {/* End of Two-Column Grid Layout */}
+
+          {/* ✨ NEW: Post-Upload Confirmation Dialog */}
+          {showUploadMoreDialog && (
+            <div
+              className={`fixed inset-0 ${overlayBg} z-50 flex items-center justify-center backdrop-blur-sm`}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className={`p-8 rounded-2xl shadow-3xl max-w-sm w-full ${overlayCardBg} ${primaryTextColor}`}
+              >
+                <h3 className="text-2xl font-bold mb-3">Upload Complete!</h3>
+                <p className={`${secondaryTextColor} mb-6`}>
+                  All {selectedFiles.length} files have been processed. You have{" "}
+                  <span className="text-green-500 font-semibold">
+                    {successfullyUploadedCount} successful
+                  </span>{" "}
+                  and{" "}
+                  <span className="text-red-500 font-semibold">
+                    {failedUploadCount} failed
+                  </span>{" "}
+                  uploads.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={handleStayOnPage}
+                    className={`px-4 py-2 text-sm rounded-lg font-medium ${secondaryTextColor} hover:bg-gray-200 dark:hover:bg-gray-700`}
+                  >
+                    Review & Train
+                  </button>
+                  <button
+                    onClick={handleStartNewUpload}
+                    className="px-4 py-2 text-sm rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                  >
+                    Upload More Images
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </motion.div>
       </TrainLayout>
       <Footer />
