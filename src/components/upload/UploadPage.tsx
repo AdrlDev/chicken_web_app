@@ -21,15 +21,10 @@ import { motion } from "framer-motion"; // ✨ NEW: Import Framer Motion
 // List of labels that should be saved to the database
 const DISEASES_TO_SAVE = new Set([
   "avian influenza",
-  "blue comb",
   "coccidiosis",
-  "coccidiosis poops",
-  "fowl cholera",
   "fowl-pox",
-  "mycotic infections",
-  "salmonela",
-  "marek's disease",
   "healthy",
+  "marek's disease",
 ]);
 
 // Helper function to get the best detection

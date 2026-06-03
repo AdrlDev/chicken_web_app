@@ -55,14 +55,10 @@ export function hexToRgba(hex: string, alpha: number) {
  */
 export const labelColors: Record<string, string> = {
   "avian influenza": "#ff9341ff",
-  "blue comb": "#00fffbff",
-  "coccidiosis": "#da4e4eff",
-  "fowl cholera": "#f188f3ff",
+  coccidiosis: "#da4e4eff",
   "fowl-pox": "#ff00bfff",
-  "mycotic infections": "#ffdc5eff",
-  "salmonela": "#403A78",
   "marek's disease": "#A52A2A",
-  default: "#00FF00",
+  healthy: "#00FF00",
 };
 
 /**

@@ -28,15 +28,10 @@ import { motion } from "framer-motion"; // ✨ NEW: Import Framer Motion
 // List of diseases you want to save (i.e., not 'Healthy')
 const DISEASES_TO_SAVE = new Set([
   "avian influenza",
-  "blue comb",
   "coccidiosis",
-  "coccidiosis poops",
-  "fowl cholera",
   "fowl-pox",
-  "mycotic infections",
-  "salmonela",
-  "marek's disease",
   "healthy",
+  "marek's disease",
 ]);
 
 // Framer Motion variant for status text

@@ -27,13 +27,10 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/components/themes/ThemeContext";
 
 const labels = [
-  "healthy",
-  "avian Influenza",
-  "blue comb",
+  "avian influenza",
   "coccidiosis",
-  "fowl cholera",
   "fowl-pox",
-  "mycotic infections",
+  "healthy",
   "marek's disease",
 ];
 
