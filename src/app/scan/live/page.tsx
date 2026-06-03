@@ -23,14 +23,10 @@ interface DetectionResult {
 // List of labels that should be saved to the database (including 'healthy' for tracking)
 const LABELS_TO_SAVE = new Set([
   "avian influenza",
-  "blue comb",
   "coccidiosis",
-  "coccidiosis poops",
-  "fowl cholera",
   "fowl-pox",
-  "mycotic infections",
-  "salmo",
   "healthy",
+  "marek's disease",
 ]);
 
 export default function CameraPage() {
