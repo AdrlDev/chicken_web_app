@@ -54,13 +54,13 @@ export function hexToRgba(hex: string, alpha: number) {
  * Label colors mapping for detections
  */
 export const labelColors: Record<string, string> = {
-  "avian Influenza": "#ff9341ff",
+  "avian influenza": "#ff9341ff",
   "blue comb": "#00fffbff",
-  coccidiosis: "#da4e4eff",
+  "coccidiosis": "#da4e4eff",
   "fowl cholera": "#f188f3ff",
   "fowl-pox": "#ff00bfff",
   "mycotic infections": "#ffdc5eff",
-  salmo: "#403A78",
+  "salmonela": "#403A78",
   "marek's disease": "#A52A2A",
   default: "#00FF00",
 };

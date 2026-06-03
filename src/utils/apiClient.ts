@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // --- Configuration ---
 // Adjust the baseURL to match your FastAPI backend, or keep it relative if using a proxy.
-const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://aedev.cloud/chickenapi/v1';
+const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.aedev.cloud';
 const TOKEN_KEY: string = 'authToken';
 
 // --- Axios Instance for Authorized API Calls ---

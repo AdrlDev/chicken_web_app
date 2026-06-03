@@ -34,7 +34,8 @@ const DISEASES_TO_SAVE = new Set([
   "fowl cholera",
   "fowl-pox",
   "mycotic infections",
-  "salmo",
+  "salmonela",
+  "marek's disease",
   "healthy",
 ]);
 
@@ -80,7 +81,7 @@ export const VideoUpload: React.FC = () => {
   // --- 1. Function to handle saving the detection ---
   const handleDetectionResult = useCallback(
     async (detection: DetectionResult) => {
-      const diagnosis = detection.label.toLowerCase();
+      const diagnosis = detection.label.toLowerCase().replace(/[\u2018\u2019]/g, "'");
       const uniqueKey = `${diagnosis}-${Math.floor(detection.timestampMs / 5000)}`;
 
       let isSaved = false;

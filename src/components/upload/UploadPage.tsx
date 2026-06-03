@@ -27,7 +27,8 @@ const DISEASES_TO_SAVE = new Set([
   "fowl cholera",
   "fowl-pox",
   "mycotic infections",
-  "salmo",
+  "salmonela",
+  "marek's disease",
   "healthy",
 ]);
 
@@ -85,7 +86,7 @@ export default function UploadPage() {
 
       const bestDetection = getBestDetection(detectionResults);
 
-      const diagnosis = bestDetection.label.toLowerCase();
+      const diagnosis = bestDetection.label.toLowerCase().replace(/[\u2018\u2019]/g, "'");
       const confidence = bestDetection.confidence ?? 0;
 
       if (DISEASES_TO_SAVE.has(diagnosis) && confidence > 0.4) {

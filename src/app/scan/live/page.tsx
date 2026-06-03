@@ -29,7 +29,8 @@ const LABELS_TO_SAVE = new Set([
   "fowl cholera",
   "fowl-pox",
   "mycotic infections",
-  "salmo",
+  "salmonela",
+  "marek's disease",
   "healthy",
 ]);
 
@@ -54,7 +55,7 @@ export default function CameraPage() {
   // --- 1. Function to handle saving the most confident detection ---
   const handleDetectionResult = useCallback(
     async (detection: DetectionResult) => {
-      const diagnosis = detection.label.toLowerCase();
+      const diagnosis = detection.label.toLowerCase().replace(/[\u2018\u2019]/g, "'");
 
       // Create a unique key for this detection event (label + time window, e.g., 5 seconds)
       // This is crucial for continuous live streams to prevent saving every frame's detection.
