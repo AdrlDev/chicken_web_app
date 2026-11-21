@@ -17,6 +17,7 @@ import Footer from "@/components/footer/Footer";
 interface DetectionResult {
   label: string;
   confidence: number;
+  bbox: [number, number, number, number];
   timestampMs?: number;
 }
 

@@ -13,9 +13,9 @@ git pull origin main
 # We use --no-cache to ensure Next.js bakes in the NEW environment variables
 echo "🏗️ Building Docker image (this may take a few minutes)..."
 docker build --no-cache -t chicken-frontend-image \
-  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.aedev.cloud \
-  --build-arg NEXT_PUBLIC_API_URL=https://api.aedev.cloud \
-  --build-arg NEXT_PUBLIC_WS_URL=wss://api.aedev.cloud \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://c-api.aesprt.com \
+  --build-arg NEXT_PUBLIC_API_URL=https://c-api.aesprt.com \
+  --build-arg NEXT_PUBLIC_WS_URL=wss://c-api.aesprt.com \
   .
 
 # 3. Stop and Remove old container if it exists
@@ -38,5 +38,5 @@ docker run -d \
 echo "🧹 Cleaning up dangling images..."
 docker image prune -f
 
-echo "✅ Deployment Complete! Visit https://chicken.aedev.cloud"
+echo "✅ Deployment Complete! Visit https://c-scan.aesprt.com"
 echo "💡 Tip: If you still see 'undefined' in the browser, perform a Hard Refresh (Ctrl+F5)."

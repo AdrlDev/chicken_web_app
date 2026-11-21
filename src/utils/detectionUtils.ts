@@ -59,6 +59,11 @@ export function matchDetectionsToTracks(
 
   // greedy matching by best IoU
   for (const det of detections) {
+    if (!det.bbox || !Array.isArray(det.bbox) || det.bbox.length < 4) {
+      console.warn("Skipping detection with invalid bbox:", det);
+      continue;
+    }
+
     const bbox = det.bbox;
     let bestIdx = -1;
     let bestScore = iouThreshold;
@@ -93,7 +98,7 @@ export function matchDetectionsToTracks(
         label: det.label ?? "obj",
         confidence: det.confidence,
         bbox: bbox,
-        smoothedBbox: bbox.slice() as [number, number, number, number],
+        smoothedBbox: (bbox.slice() as [number, number, number, number]),
         lastSeenMs: nowMs,
         ageMs: 0,
       };

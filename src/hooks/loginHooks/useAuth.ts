@@ -5,7 +5,7 @@ import { UserOut, AuthHook, TokenResponse } from '@/domain/types/auth'; // Adjus
 
 // --- Configuration ---
 // const API_BASE_URL: string = '/api';
-const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.aedev.cloud';
+const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://c-api.aesprt.com';
 const TOKEN_KEY: string = 'authToken';
 
 // --- Axios Instance for Authorized API Calls ---
